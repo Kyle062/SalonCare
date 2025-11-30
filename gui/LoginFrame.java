@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -18,9 +19,6 @@ import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 
 public class LoginFrame extends JFrame {
-
-    private static final String LEFT_IMAGE_PATH = "images/backgroundLogo.jpg";
-    private static final String LOGO_IMAGE_PATH = "images/LogoFinal1.png";
 
     public LoginFrame() {
         Color themeColor = new Color(128, 207, 192);
@@ -55,100 +53,116 @@ public class LoginFrame extends JFrame {
         JLabel logoLabel = new JLabel();
         logoLabel.setBounds(60, 100, 580, 580);
 
+        JLabel logoLabel2 = new JLabel();
+        logoLabel2.setBounds(140, 0, 400, 400);
+
         JLabel headingLabel = new JLabel(
                 "<html>DYNAMIC CLIENT SCHEDULING SYSTEM <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FOR BEAUTY SERVICES</html>");
         headingLabel.setFont(new Font("Arial", Font.BOLD, 19));
         headingLabel.setBounds(150, 515, 580, 50);
 
-        URL imageURL = LoginFrame.class.getClassLoader().getResource(LEFT_IMAGE_PATH);
-        URL imageLogoURL = LoginFrame.class.getClassLoader().getResource(LOGO_IMAGE_PATH);
-        if (imageURL != null) {
-            ImageIcon originalIcon = new ImageIcon(imageURL);
-            ImageIcon originalLogo = new ImageIcon(imageLogoURL);
+        // IMAGES
+        URL imageURL = LoginFrame.class.getClassLoader().getResource("images/backgroundLogo.jpg");
+        URL imageLogoURL = LoginFrame.class.getClassLoader().getResource("images/LogoFinal1.png");
+        URL imageLogoURL2 = LoginFrame.class.getClassLoader().getResource("images/LogoSalonCare2.png");
+        ImageIcon originalIcon = new ImageIcon(imageURL);
+        ImageIcon originalLogo = new ImageIcon(imageLogoURL);
+        ImageIcon originalLogo2 = new ImageIcon(imageLogoURL2);
 
-            Image scaledImage = originalIcon.getImage().getScaledInstance(
-                    650, 900, Image.SCALE_SMOOTH);
-            imageLabel.setIcon(new ImageIcon(scaledImage));
+        Image scaledImage = originalIcon.getImage().getScaledInstance(650, 900, Image.SCALE_SMOOTH);
+        imageLabel.setIcon(new ImageIcon(scaledImage));
 
-            Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
-            logoLabel.setIcon(new ImageIcon(scaledLogoImage));
+        Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
+        logoLabel.setIcon(new ImageIcon(scaledLogoImage));
 
-            leftJPanel.add(imageLabel);
-            imageLabel.add(logoLabel);
-            imageLabel.add(headingLabel);
+        Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
+        logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
 
-            // --- RIGHT PANEL COMPONENTS ---
-            JLabel titleLabel = new JLabel("Welcome to Salon Care", SwingConstants.CENTER);
-            titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 48));
-            titleLabel.setForeground(themeColor);
-            titleLabel.setBounds(0, 150, 650, 60);
-            rightJPanel.add(titleLabel);
 
-            JLabel subTitleLabel = new JLabel("Please enter your credentials to proceed", SwingConstants.CENTER);
-            subTitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20));
-            subTitleLabel.setForeground(themeColor);
-            subTitleLabel.setBounds(0, 210, 650, 30);
-            rightJPanel.add(subTitleLabel);
+        leftJPanel.add(imageLabel);
+        imageLabel.add(logoLabel);
+        imageLabel.add(headingLabel);
+        rightJPanel.add(logoLabel2);
 
-            JLabel emailPhoneLabel = new JLabel("Email/Phone: ");
-            emailPhoneLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-            emailPhoneLabel.setForeground(Color.black);
-            emailPhoneLabel.setBounds(100, 320, 450, 25);
-            rightJPanel.add(emailPhoneLabel);
+        // --- RIGHT PANEL COMPONENTS ---
+        JLabel titleLabel = new JLabel("Welcome Back to Salon Care", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(themeColor);
+        titleLabel.setBounds(0, 210, 650, 60);
+        rightJPanel.add(titleLabel);
 
-            JTextField emailPhoneField = new JTextField();
-            emailPhoneField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-            emailPhoneField.setBackground(Color.WHITE);
-            emailPhoneField.setBorder(new LineBorder(Color.black, 1));
-            emailPhoneField.setBounds(100, 350, 450, 40);
-            rightJPanel.add(emailPhoneField);
+        JLabel subTitleLabel = new JLabel("Please enter your credentials to proceed", SwingConstants.CENTER);
+        subTitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20));
+        subTitleLabel.setForeground(themeColor);
+        subTitleLabel.setBounds(0, 255, 650, 30);
+        rightJPanel.add(subTitleLabel);
 
-            JLabel passwordLabel = new JLabel("Password: ");
-            passwordLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-            passwordLabel.setForeground(Color.black);
-            passwordLabel.setBounds(100, 430, 450, 25);
-            rightJPanel.add(passwordLabel);
+        JLabel emailPhoneLabel = new JLabel("Email/Phone: ");
+        emailPhoneLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        emailPhoneLabel.setForeground(Color.black);
+        emailPhoneLabel.setBounds(140, 320, 340, 20);
+        rightJPanel.add(emailPhoneLabel);
 
-            JPasswordField passwordField = new JPasswordField();
-            passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-            passwordField.setBackground(Color.WHITE);
-            passwordField.setBorder(new LineBorder(Color.black, 1));
-            passwordField.setBounds(100, 460, 450, 40);
-            rightJPanel.add(passwordField);
+        JTextField emailPhoneField = new JTextField();
+        emailPhoneField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        emailPhoneField.setBackground(Color.WHITE);
+        emailPhoneField.setBorder(new LineBorder(Color.black, 1));
+        emailPhoneField.setBounds(140, 350, 380, 35);
+        rightJPanel.add(emailPhoneField);
 
-            JButton loginButton = new JButton("Login");
-            loginButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
-            loginButton.setForeground(Color.WHITE);
-            loginButton.setBackground(themeColor);
-            loginButton.setBounds(100, 560, 450, 55);
-            loginButton.setFocusPainted(false);
-            rightJPanel.add(loginButton);
+        JLabel passwordLabel = new JLabel("Password: ");
+        passwordLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        passwordLabel.setForeground(Color.black);
+        passwordLabel.setBounds(140, 400, 340, 20);
+        rightJPanel.add(passwordLabel);
 
-            JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
-            feedbackLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            feedbackLabel.setBounds(100, 630, 450, 30);
-            rightJPanel.add(feedbackLabel);
+        JPasswordField passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        passwordField.setBackground(Color.WHITE);
+        passwordField.setBorder(new LineBorder(Color.black, 1));
+        passwordField.setBounds(140, 430, 380, 35);
+        rightJPanel.add(passwordField);
 
-            // --- ACTION LISTENER ---
-            loginButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String emailOrPhone = emailPhoneField.getText().trim();
-                    String password = new String(passwordField.getPassword());
+        JButton loginButton = new JButton("Login");
+        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        loginButton.setForeground(Color.WHITE);
+        loginButton.setBackground(themeColor);
+        loginButton.setBounds(230, 500, 200, 50);
+        loginButton.setFocusPainted(false);
+        rightJPanel.add(loginButton);
 
-                    if (emailOrPhone.equals("user@saloncare.com") && password.equals("1234")) {
-                        feedbackLabel.setText("Login Successful! Redirecting...");
-                        feedbackLabel.setForeground(new Color(34, 139, 34));
+        JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
+        feedbackLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        feedbackLabel.setBounds(100, 570, 450, 30);
+        rightJPanel.add(feedbackLabel);
 
-                    } else {
-                        feedbackLabel.setText("Invalid credentials. Please try again.");
-                        feedbackLabel.setForeground(Color.RED);
-                    }
+        // Don't have an account link
+        JLabel signUp = new JLabel("<html>Don't have account? <u>Sign Up</u></html>", SwingConstants.CENTER);
+        signUp.setBounds(230, 620, 200, 15);
+        signUp.setFont(new Font("Arial", Font.PLAIN, 11));
+        signUp.setForeground(Color.black);
+        signUp.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        rightJPanel.add(signUp);
 
-                    passwordField.setText("");
+        // --- ACTION LISTENER ---
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String emailOrPhone = emailPhoneField.getText().trim();
+                String password = new String(passwordField.getPassword());
+
+                if (emailOrPhone.equals("user@saloncare.com") && password.equals("1234")) {
+                    feedbackLabel.setText("Login Successful! Redirecting...");
+                    feedbackLabel.setForeground(new Color(34, 139, 34));
+
+                } else {
+                    feedbackLabel.setText("Invalid credentials. Please try again.");
+                    feedbackLabel.setForeground(Color.RED);
                 }
-            });
-        }
 
+                passwordField.setText("");
+            }
+        });
     }
+
 }
