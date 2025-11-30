@@ -17,6 +17,8 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class LoginFrame extends JFrame {
 
@@ -77,7 +79,6 @@ public class LoginFrame extends JFrame {
 
         Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
         logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
-
 
         leftJPanel.add(imageLabel);
         imageLabel.add(logoLabel);
@@ -143,6 +144,13 @@ public class LoginFrame extends JFrame {
         signUp.setForeground(Color.black);
         signUp.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(signUp);
+        signUp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dispose();
+                new SignupFrame().setVisible(true);
+            }
+        });
 
         // --- ACTION LISTENER ---
         loginButton.addActionListener(new ActionListener() {
