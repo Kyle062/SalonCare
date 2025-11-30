@@ -85,7 +85,7 @@ public class LoginFrame extends JFrame {
         rightJPanel.add(logoLabel2);
 
         // --- RIGHT PANEL COMPONENTS ---
-        JLabel titleLabel = new JLabel("Welcome Back to Salon Care", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Welcome to Salon Care", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(themeColor);
         titleLabel.setBounds(0, 210, 650, 60);
