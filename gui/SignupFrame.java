@@ -68,7 +68,7 @@ public class SignupFrame extends JFrame {
         URL imageURL = SignupFrame.class.getClassLoader().getResource("images/backgroundLogo.jpg");
         URL imageLogoURL = SignupFrame.class.getClassLoader().getResource("images/LogoFinal1.png");
         URL imageLogoURL2 = SignupFrame.class.getClassLoader().getResource("images/LogoSalonCare2.png");
-        
+
         // Use placeholder images if resources are null (common in Swing)
         ImageIcon originalIcon = (imageURL != null) ? new ImageIcon(imageURL) : new ImageIcon();
         ImageIcon originalLogo = (imageLogoURL != null) ? new ImageIcon(imageLogoURL) : new ImageIcon();
@@ -89,7 +89,7 @@ public class SignupFrame extends JFrame {
         rightJPanel.add(logoLabel2);
 
         // --- RIGHT PANEL COMPONENTS (Updated for Sign Up) ---
-        
+
         // 1. Title and Subtitle
         JLabel titleLabel = new JLabel("Create Your Account", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
@@ -97,74 +97,71 @@ public class SignupFrame extends JFrame {
         titleLabel.setBounds(0, 210, 650, 60);
         rightJPanel.add(titleLabel);
 
-        JLabel subTitleLabel = new JLabel("Enter your details to get started with our beauty services system.", SwingConstants.CENTER);
+        JLabel subTitleLabel = new JLabel("Enter your details to get started with our beauty services system.",
+                SwingConstants.CENTER);
         subTitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20));
-        subTitleLabel.setForeground(new Color(themeColor.getRed() - 30, themeColor.getGreen() - 30, themeColor.getBlue() - 30)); // Slightly darker theme color
+        subTitleLabel.setForeground(
+                new Color(themeColor.getRed() - 30, themeColor.getGreen() - 30, themeColor.getBlue() - 30)); // Slightly
+                                                                                                             // darker
+                                                                                                             // theme
+                                                                                                             // color
         subTitleLabel.setBounds(0, 255, 650, 30);
         rightJPanel.add(subTitleLabel);
 
-        // --- Field Positioning Setup ---
-        int xStart = 140;
-        int yStart = 310;
-        int width = 380;
-        int height = 35;
-        int spacing = 50; // Vertical spacing between fields
-        
         // 2. Name Field
         JLabel nameLabel = new JLabel("Full Name: ");
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         nameLabel.setForeground(Color.black);
-        nameLabel.setBounds(xStart, yStart, width, 20);
+        nameLabel.setBounds(140, 310, 380, 20);
         rightJPanel.add(nameLabel);
 
         JTextField nameField = new JTextField();
         nameField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         nameField.setBackground(Color.WHITE);
         nameField.setBorder(new LineBorder(Color.black, 1));
-        nameField.setBounds(xStart, yStart + 30, width, height);
+        nameField.setBounds(140, 340, 380, 35);
         rightJPanel.add(nameField);
 
         // 3. Email Field
         JLabel emailLabel = new JLabel("Email Address: ");
         emailLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         emailLabel.setForeground(Color.black);
-        emailLabel.setBounds(xStart, yStart + spacing * 1 + height, width, 20); // 310 + 50 + 35 = 395. Let's adjust to 390
-        emailLabel.setBounds(xStart, yStart + 80, width, 20); // 310 + 80 = 390
+        emailLabel.setBounds(140, 390, 380, 20);
         rightJPanel.add(emailLabel);
 
         JTextField emailField = new JTextField();
         emailField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         emailField.setBackground(Color.WHITE);
         emailField.setBorder(new LineBorder(Color.black, 1));
-        emailField.setBounds(xStart, yStart + 110, width, height); // 310 + 110 = 420
+        emailField.setBounds(140, 420, 380, 35);
         rightJPanel.add(emailField);
-        
+
         // 4. Phone Field
         JLabel phoneLabel = new JLabel("Phone Number: ");
         phoneLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         phoneLabel.setForeground(Color.black);
-        phoneLabel.setBounds(xStart, yStart + 160, width, 20); // 310 + 160 = 470
+        phoneLabel.setBounds(140, 470, 380, 20);
         rightJPanel.add(phoneLabel);
 
         JTextField phoneField = new JTextField();
         phoneField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         phoneField.setBackground(Color.WHITE);
         phoneField.setBorder(new LineBorder(Color.black, 1));
-        phoneField.setBounds(xStart, yStart + 190, width, height); // 310 + 190 = 500
+        phoneField.setBounds(140, 500, 380, 35);
         rightJPanel.add(phoneField);
 
         // 5. Password Field
         JLabel passwordLabel = new JLabel("Password: ");
         passwordLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         passwordLabel.setForeground(Color.black);
-        passwordLabel.setBounds(xStart, yStart + 240, width, 20); // 310 + 240 = 550
+        passwordLabel.setBounds(140, 550, 380, 20);
         rightJPanel.add(passwordLabel);
 
         JPasswordField passwordField = new JPasswordField();
         passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         passwordField.setBackground(Color.WHITE);
         passwordField.setBorder(new LineBorder(Color.black, 1));
-        passwordField.setBounds(xStart, yStart + 270, width, height); // 310 + 270 = 580
+        passwordField.setBounds(140, 580, 380, 35);
         rightJPanel.add(passwordField);
 
         // 6. Sign Up Button
@@ -172,30 +169,30 @@ public class SignupFrame extends JFrame {
         signupButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
         signupButton.setForeground(Color.WHITE);
         signupButton.setBackground(themeColor);
-        signupButton.setBounds(230, yStart + 340, 200, 50); // 310 + 340 = 650
+        signupButton.setBounds(230, 650, 200, 50);
         signupButton.setFocusPainted(false);
         rightJPanel.add(signupButton);
 
         // 7. Feedback Label
         JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
         feedbackLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        feedbackLabel.setBounds(100, yStart + 410, 450, 30); // 310 + 410 = 720
+        feedbackLabel.setBounds(100, 720, 450, 30);
         rightJPanel.add(feedbackLabel);
 
         // 8. Already have an account link
         JLabel loginLabel = new JLabel("<html>Already have an account? <u>Log In</u></html>", SwingConstants.CENTER);
-        loginLabel.setBounds(230, yStart + 460, 200, 15); // 310 + 460 = 770
+        loginLabel.setBounds(230, 770, 200, 15);
         loginLabel.setFont(new Font("Arial", Font.PLAIN, 11));
         loginLabel.setForeground(Color.black);
         loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(loginLabel);
-        
+
         // --- ACTION LISTENER for Navigation ---
         loginLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 dispose();
-                new LoginFrame().setVisible(true);
+                new LoginFrame().setVisible(true); // Open the LoginFrame
             }
         });
 
@@ -207,7 +204,7 @@ public class SignupFrame extends JFrame {
                 String email = emailField.getText().trim();
                 String phone = phoneField.getText().trim();
                 String password = new String(passwordField.getPassword());
-                
+
                 // Simple validation for mock sign-up
                 if (fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
                     feedbackLabel.setText("Please fill out all fields.");
@@ -233,6 +230,5 @@ public class SignupFrame extends JFrame {
             }
         });
     }
-    
-   
+
 }
