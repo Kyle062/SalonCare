@@ -31,32 +31,13 @@ import java.awt.Dimension;
 
 public class ClientDashboardFrame extends JFrame {
 
-    // Helper method to load and scale an image
-    private ImageIcon scaleImage(String path, int width, int height) {
-        URL imgUrl = ClientDashboardFrame.class.getClassLoader().getResource(path);
-        if (imgUrl != null) {
-            ImageIcon originalIcon = new ImageIcon(imgUrl);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaledImage);
-        }
-        return null;
-    }
-
     // --- SERVICE CARD CLASS ---
     private class ServiceCard extends JPanel {
         final int CARD_PREF_WIDTH = 300;
         final int CARD_PREF_HEIGHT = 380;
         final int IMAGE_HEIGHT = 220;
-
-        private String serviceNameText; // store name for searching
-
-        // If you want to move the rating, change these grid positions / insets:
-        // - ratingGridX and ratingGridY control the gridx and gridy used in the card's
-        // GridBagLayout.
-        // - ratingInsets controls the (top, left, bottom, right) offset.
-        // Example: to move rating further right, increase ratingInsets.right value (or
-        // change gridx).
-        private int ratingGridX = 1; // <-- change X position for rating here (gridx)
+        private String serviceNameText;
+        private int ratingGridX = 1;
         private int ratingGridY = 2; // <-- change Y position for rating here (gridy)
         private Insets ratingInsets = new Insets(0, 6, 15, 15); // <-- change top,left,bottom,right padding here
 
@@ -164,10 +145,6 @@ public class ClientDashboardFrame extends JFrame {
         }
     }
 
-    // --- MAIN FRAME IMPLEMENTATION ---
-
-    // We'll keep references to these components so the search button can update
-    // them
     private JPanel mainContentPanel;
     private JScrollPane scrollPane;
     private JLabel noResultsLabel;
@@ -304,15 +281,15 @@ public class ClientDashboardFrame extends JFrame {
         /// Styled Search button — matches the rest of the system UI
         JButton searchBtn = new JButton("Search");
         searchBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        searchBtn.setBackground(mintTeal); 
-        searchBtn.setForeground(Color.WHITE); 
-        searchBtn.setFocusPainted(false); 
+        searchBtn.setBackground(mintTeal);
+        searchBtn.setForeground(Color.WHITE);
+        searchBtn.setFocusPainted(false);
         searchBtn.setBorderPainted(false);
-        searchBtn.setOpaque(true); 
+        searchBtn.setOpaque(true);
         searchBtn.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(lightGrayBorder, 1, true), // thin rounded outline
                 BorderFactory.createEmptyBorder(6, 14, 6, 14) // top,left,bottom,right padding
-        ));       
+        ));
         searchBtn.setBounds(searchField.getX() + searchField.getWidth() + 10, searchField.getY(), 100, searchHeight);
         searchBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         Color normalBg = mintTeal;
@@ -325,6 +302,7 @@ public class ClientDashboardFrame extends JFrame {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 searchBtn.setBackground(hoverBg);
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 searchBtn.setBackground(normalBg);
@@ -458,7 +436,44 @@ public class ClientDashboardFrame extends JFrame {
             dispose();
         });
 
-        myAppointmentsBtn.addActionListener(e -> System.out.println("Navigating to My Appointments screen..."));
+        myAppointmentsBtn.addActionListener(e -> {
+            scrollPane.setVisible(false);
+            noResultsLabel.setVisible(false);
+            servicesTitle.setVisible(false);
+            searchField.setVisible(false);
+            searchBtn.setVisible(false);
+            boolean found = false;
+            for (java.awt.Component comp : rightJPanel.getComponents()) {
+                if (comp instanceof AppointmentsPanel) {
+                    comp.setVisible(true);
+                    found = true;
+                }
+            }
+            if (!found) {
+                AppointmentsPanel apptPanel = new AppointmentsPanel(RIGHT_PANEL_WIDTH, FRAME_HEIGHT);
+                apptPanel.setBounds(0, 0, RIGHT_PANEL_WIDTH, FRAME_HEIGHT);
+                rightJPanel.add(apptPanel);
+            }
+
+            rightJPanel.revalidate();
+            rightJPanel.repaint();
+        });
+
+        // Update Services Button to hide appointments
+        servicesBtn.addActionListener(e -> {
+            for (java.awt.Component comp : rightJPanel.getComponents()) {
+                if (comp instanceof AppointmentsPanel) {
+                    comp.setVisible(false);
+                }
+            }
+            scrollPane.setVisible(true);
+            servicesTitle.setVisible(true);
+            searchField.setVisible(true);
+            searchBtn.setVisible(true);
+
+            rightJPanel.revalidate();
+            rightJPanel.repaint();
+        });
     }
 
     public static void main(String[] args) {
@@ -466,5 +481,15 @@ public class ClientDashboardFrame extends JFrame {
         javax.swing.SwingUtilities.invokeLater(() -> {
             new ClientDashboardFrame();
         });
+    }
+
+    private ImageIcon scaleImage(String path, int width, int height) {
+        URL imgUrl = ClientDashboardFrame.class.getClassLoader().getResource(path);
+        if (imgUrl != null) {
+            ImageIcon originalIcon = new ImageIcon(imgUrl);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaledImage);
+        }
+        return null;
     }
 }

@@ -43,6 +43,18 @@ public class Appointment implements Serializable {
         this.confirmed = confirmed;
     }
 
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public void setService(ServiceItem service) {
+        this.service = service;
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
     @Override
     public String toString() {
         return id + " | " + client.getName() + " | " + service.getName() + " | " + dateTime.toString()
