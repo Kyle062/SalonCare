@@ -19,6 +19,7 @@ public class Appointment implements Serializable {
         this.confirmed = false;
     }
 
+    // --- Getters ---
     public String getId() {
         return id;
     }
@@ -39,6 +40,19 @@ public class Appointment implements Serializable {
         return confirmed;
     }
 
+    public String getClientName() {
+        return client.getName();
+    }
+
+    public String getClientContact() {
+        return client.getPhone();
+    }
+
+    public String getServiceName() {
+        return service.getName();
+    }
+
+    // --- Setters ---
     public void setConfirmed(boolean confirmed) {
         this.confirmed = confirmed;
     }
@@ -58,6 +72,6 @@ public class Appointment implements Serializable {
     @Override
     public String toString() {
         return id + " | " + client.getName() + " | " + service.getName() + " | " + dateTime.toString()
-                + (confirmed ? " | CONFIRMED" : "");
+                + (confirmed ? " | CONFIRMED" : " | PENDING");
     }
 }
