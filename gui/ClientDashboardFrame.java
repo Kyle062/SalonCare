@@ -8,9 +8,13 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.GridLayout;
+import java.awt.FlowLayout;
 import java.net.URL;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -44,8 +48,22 @@ public class ClientDashboardFrame extends JFrame {
         final int CARD_PREF_HEIGHT = 380;
         final int IMAGE_HEIGHT = 220;
 
+        private String serviceNameText; // store name for searching
+
+        // If you want to move the rating, change these grid positions / insets:
+        // - ratingGridX and ratingGridY control the gridx and gridy used in the card's
+        // GridBagLayout.
+        // - ratingInsets controls the (top, left, bottom, right) offset.
+        // Example: to move rating further right, increase ratingInsets.right value (or
+        // change gridx).
+        private int ratingGridX = 1; // <-- change X position for rating here (gridx)
+        private int ratingGridY = 2; // <-- change Y position for rating here (gridy)
+        private Insets ratingInsets = new Insets(0, 6, 15, 15); // <-- change top,left,bottom,right padding here
+
         public ServiceCard(String serviceName, String price, String imageUrl, Color themeColor, int imageWidth,
                 int imageHeight) {
+            this.serviceNameText = serviceName;
+
             setPreferredSize(new Dimension(CARD_PREF_WIDTH, CARD_PREF_HEIGHT));
             setLayout(new GridBagLayout());
             setBackground(Color.WHITE);
@@ -100,39 +118,30 @@ public class ClientDashboardFrame extends JFrame {
             gbc.insets = new Insets(0, 15, 15, 5);
             add(priceLabel, gbc);
 
-            // Mock rating (Now using image icons)
-            JPanel ratingPanel = new JPanel(new GridLayout(1, 6, 2, 0)); // Panel for stars and text
+            // Rating panel (stars + rating number)
+            // I use a small FlowLayout aligned to the right so it behaves predictably.
+            // To change position: edit ratingGridX, ratingGridY, or ratingInsets (above).
+            JPanel ratingPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
             ratingPanel.setBackground(Color.WHITE);
 
-            ImageIcon starIcon = scaleImage("images/star_icon.png", 14, 14); // Load the star image
+            // Use smaller stars with consistent spacing and font (change font size here)
+            JLabel starsLabel = new JLabel("★★★★★"); // alternatively use icons
+            starsLabel.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 14)); // star size -> change here
+            starsLabel.setForeground(new Color(255, 200, 0)); // gold-ish color
 
-            if (starIcon != null) {
-                // Add 5 star images
-                for (int i = 0; i < 5; i++) {
-                    JLabel starLabel = new JLabel(starIcon);
-                    ratingPanel.add(starLabel);
-                }
-            } else {
-                // Fallback text if star image is missing
-                JLabel fallbackStars = new JLabel("*****",SwingConstants.CENTER);
-                fallbackStars.setFont(new Font("Segoe UI", Font.PLAIN, 40));
-                fallbackStars.setForeground(Color.YELLOW);
-                fallbackStars.setAlignmentY(CENTER_ALIGNMENT);
-                ratingPanel.add(fallbackStars);
-            }
-
-            // Add the 5.0 rating text
             JLabel ratingText = new JLabel("5.0");
             ratingText.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             ratingText.setForeground(Color.GRAY);
-            ratingText.setBounds(100, 0, 20, 20);
+
+            ratingPanel.add(starsLabel);
             ratingPanel.add(ratingText);
 
-            gbc.gridx = 1;
-            gbc.gridy = 2;
-            gbc.insets = new Insets(0, 5, 15, 15);
-            gbc.fill = GridBagConstraints.NONE; // Don't stretch the rating panel
-            gbc.anchor = GridBagConstraints.EAST; // Anchor it to the right
+            // Place rating panel using the constants above (clear place to edit position)
+            gbc.gridx = ratingGridX; // <-- change grid x here to move rating horizontally
+            gbc.gridy = ratingGridY; // <-- change grid y here to move rating vertically
+            gbc.insets = ratingInsets; // <-- change insets here (top,left,bottom,right)
+            gbc.fill = GridBagConstraints.NONE;
+            gbc.anchor = GridBagConstraints.EAST;
             add(ratingPanel, gbc);
 
             // Hover effect
@@ -148,9 +157,20 @@ public class ClientDashboardFrame extends JFrame {
                 }
             });
         }
+
+        // Expose service name for searching
+        public String getServiceName() {
+            return serviceNameText;
+        }
     }
 
     // --- MAIN FRAME IMPLEMENTATION ---
+
+    // We'll keep references to these components so the search button can update
+    // them
+    private JPanel mainContentPanel;
+    private JScrollPane scrollPane;
+    private JLabel noResultsLabel;
 
     public ClientDashboardFrame() {
         Color mintTeal = new Color(128, 207, 192);
@@ -270,7 +290,7 @@ public class ClientDashboardFrame extends JFrame {
         // Search Bar
         int searchWidth = (int) (RIGHT_PANEL_WIDTH * 0.25);
         int searchHeight = (int) (TOP_BAR_HEIGHT * 0.4);
-        JTextField searchField = new JTextField(" Search");
+        JTextField searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         searchField.setForeground(Color.GRAY.darker());
         searchField.setBounds(RIGHT_PANEL_WIDTH - searchWidth - (int) (RIGHT_PANEL_WIDTH * 0.1),
@@ -281,24 +301,36 @@ public class ClientDashboardFrame extends JFrame {
                 BorderFactory.createEmptyBorder(5, 15, 5, 15)));
         rightJPanel.add(searchField);
 
-        // Search Icon (Now using image)
-        JLabel searchIcon = new JLabel();
-        ImageIcon searchImg = scaleImage("images/search_icon.png", 20, 20); // Load the search image
-
-        if (searchImg != null) {
-            searchIcon.setIcon(searchImg);
-            System.out.println("Image not found2");
-        } else {
-            System.out.println("Image not found");
-        }
-
-        // Positioning the icon
-        int iconSize = 20;
-        searchIcon.setBounds(searchField.getX() + searchField.getWidth() - 35,
-                searchField.getY() + (searchHeight - iconSize) / 2,
-                iconSize, iconSize);
-        searchIcon.setHorizontalAlignment(SwingConstants.CENTER);
-        rightJPanel.add(searchIcon);
+        /// Styled Search button — matches the rest of the system UI
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        searchBtn.setBackground(mintTeal); 
+        searchBtn.setForeground(Color.WHITE); 
+        searchBtn.setFocusPainted(false); 
+        searchBtn.setBorderPainted(false);
+        searchBtn.setOpaque(true); 
+        searchBtn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(lightGrayBorder, 1, true), // thin rounded outline
+                BorderFactory.createEmptyBorder(6, 14, 6, 14) // top,left,bottom,right padding
+        ));       
+        searchBtn.setBounds(searchField.getX() + searchField.getWidth() + 10, searchField.getY(), 100, searchHeight);
+        searchBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        Color normalBg = mintTeal;
+        Color hoverBg = new Color(
+                Math.max(0, mintTeal.getRed() - 10),
+                Math.max(0, mintTeal.getGreen() - 12),
+                Math.max(0, mintTeal.getBlue() - 10));
+        searchBtn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                searchBtn.setBackground(hoverBg);
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                searchBtn.setBackground(normalBg);
+            }
+        });
+        rightJPanel.add(searchBtn);
 
         // Profile Icon (Placeholder from image)
         JLabel profileIcon = new JLabel();
@@ -323,13 +355,14 @@ public class ClientDashboardFrame extends JFrame {
         rightJPanel.add(separator);
 
         // --- Scrollable Services Grid Area ---
-        JPanel mainContentPanel = new JPanel();
+        mainContentPanel = new JPanel();
         mainContentPanel.setLayout(new GridLayout(0, 3, 40, 40));
         mainContentPanel.setBackground(Color.WHITE);
-        mainContentPanel
-                .setBorder(new EmptyBorder(40, (int) (RIGHT_PANEL_WIDTH * 0.04), 40, (int) (RIGHT_PANEL_WIDTH * 0.04)));
+        mainContentPanel.setBorder(
+                new EmptyBorder(40, (int) (RIGHT_PANEL_WIDTH * 0.04), 40, (int) (RIGHT_PANEL_WIDTH * 0.04)));
 
         // --- Add Service Cards (Sample Data) ---
+        // Keep the same sample data; search will filter these
         mainContentPanel.add(new ServiceCard("Signature Haircut", "800.00", "images/haircut.png", mintTeal, 155, 160));
         mainContentPanel
                 .add(new ServiceCard("Deep Cleansing Facial", "1,500.00", "images/service_facial.jpg", mintTeal, 155,
@@ -342,8 +375,8 @@ public class ClientDashboardFrame extends JFrame {
         mainContentPanel
                 .add(new ServiceCard("Eyebrow Threading", "550.00", "images/service_eyebrow.jpg", mintTeal, 155, 100));
         mainContentPanel
-                .add(new ServiceCard("Relaxing Body Massage", "1,800.00", "images/service_massage.jpg", mintTeal, 155,
-                        100));
+                .add(new ServiceCard("Relaxing Body Massage", "1,800.00", "images/service_massage.jpg", mintTeal,
+                        155, 100));
         mainContentPanel
                 .add(new ServiceCard("Permanent Hair Straight", "4,500.00", "images/service_straight.jpg", mintTeal,
                         100, 100));
@@ -354,7 +387,7 @@ public class ClientDashboardFrame extends JFrame {
                         100));
 
         // Scroll Pane for the main content
-        JScrollPane scrollPane = new JScrollPane(mainContentPanel);
+        scrollPane = new JScrollPane(mainContentPanel);
         scrollPane.setBounds(0, TOP_BAR_HEIGHT + 1, RIGHT_PANEL_WIDTH, FRAME_HEIGHT - TOP_BAR_HEIGHT - 1);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -364,11 +397,65 @@ public class ClientDashboardFrame extends JFrame {
 
         rightJPanel.add(scrollPane);
 
+        // "No results" label (overlay) - initially hidden
+        noResultsLabel = new JLabel("No services found", SwingConstants.CENTER);
+        noResultsLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        noResultsLabel.setForeground(Color.GRAY);
+        noResultsLabel.setBounds(0, TOP_BAR_HEIGHT + 1, RIGHT_PANEL_WIDTH, FRAME_HEIGHT - TOP_BAR_HEIGHT - 1);
+        noResultsLabel.setVisible(false);
+        rightJPanel.add(noResultsLabel);
+
+        // --- Search logic ---
+        ActionListener performSearch = e -> {
+            String query = searchField.getText();
+            if (query == null)
+                query = "";
+            query = query.trim().toLowerCase();
+
+            boolean anyVisible = false;
+            for (java.awt.Component comp : mainContentPanel.getComponents()) {
+                if (comp instanceof ServiceCard) {
+                    ServiceCard card = (ServiceCard) comp;
+                    String name = card.getServiceName();
+                    if (name != null && name.toLowerCase().contains(query)) {
+                        card.setVisible(true);
+                        anyVisible = true;
+                    } else {
+                        card.setVisible(false);
+                    }
+                }
+            }
+            if (query.isEmpty()) {
+                for (java.awt.Component comp : mainContentPanel.getComponents()) {
+                    comp.setVisible(true);
+                }
+                anyVisible = true;
+            }
+
+            // Show grid or "no results" message
+            scrollPane.setVisible(anyVisible);
+            noResultsLabel.setVisible(!anyVisible);
+
+            // revalidate and repaint to apply visibility changes
+            mainContentPanel.revalidate();
+            mainContentPanel.repaint();
+        };
+
+        // Attach to the search button
+        searchBtn.addActionListener(performSearch);
+
+        // Allow pressing Enter in the search field to trigger search
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent ke) {
+                if (ke.getKeyCode() == KeyEvent.VK_ENTER) {
+                    performSearch.actionPerformed(null);
+                }
+            }
+        });
         // --- Action Listeners ---
         logoutBtn.addActionListener(e -> {
             dispose();
-            // Assuming LoginFrame is available
-            // new LoginFrame().setVisible(true);
         });
 
         myAppointmentsBtn.addActionListener(e -> System.out.println("Navigating to My Appointments screen..."));
