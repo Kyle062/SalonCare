@@ -1,32 +1,18 @@
 package gui;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import models.Client;
+import storage.DataManager;
+import javax.swing.*;
 import javax.swing.border.LineBorder;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
+import java.net.URL;
 
 public class SignupFrame extends JFrame {
 
     public SignupFrame() {
-        // Theme color matching the provided image's aesthetic
         Color themeColor = new Color(128, 207, 192);
 
-        // Original frame dimensions
         setSize(1300, 900);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -37,7 +23,7 @@ public class SignupFrame extends JFrame {
         // --- LEFT PANEL (Image) ---
         JPanel leftJPanel = new JPanel();
         leftJPanel.setBounds(0, 0, 650, 900);
-        leftJPanel.setBackground(new Color(255, 255, 255));
+        leftJPanel.setBackground(Color.WHITE);
         leftJPanel.setLayout(null);
         add(leftJPanel);
 
@@ -48,7 +34,7 @@ public class SignupFrame extends JFrame {
         rightJPanel.setLayout(null);
         add(rightJPanel);
 
-        // --- Image Loading (Using original stretching logic) ---
+        // --- Image Loading ---
         JLabel imageLabel = new JLabel();
         imageLabel.setBounds(0, 0, 650, 900);
         imageLabel.setLayout(null);
@@ -64,33 +50,35 @@ public class SignupFrame extends JFrame {
         headingLabel.setFont(new Font("Arial", Font.BOLD, 19));
         headingLabel.setBounds(150, 515, 580, 50);
 
-        // IMAGES - Corrected class reference to SignupFrame
+        // Load images
         URL imageURL = SignupFrame.class.getClassLoader().getResource("images/backgroundLogo.jpg");
         URL imageLogoURL = SignupFrame.class.getClassLoader().getResource("images/LogoFinal1.png");
         URL imageLogoURL2 = SignupFrame.class.getClassLoader().getResource("images/LogoSalonCare2.png");
 
-        // Use placeholder images if resources are null (common in Swing)
-        ImageIcon originalIcon = (imageURL != null) ? new ImageIcon(imageURL) : new ImageIcon();
-        ImageIcon originalLogo = (imageLogoURL != null) ? new ImageIcon(imageLogoURL) : new ImageIcon();
-        ImageIcon originalLogo2 = (imageLogoURL2 != null) ? new ImageIcon(imageLogoURL2) : new ImageIcon();
+        if (imageURL != null) {
+            ImageIcon originalIcon = new ImageIcon(imageURL);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(650, 900, Image.SCALE_SMOOTH);
+            imageLabel.setIcon(new ImageIcon(scaledImage));
+        }
 
-        Image scaledImage = originalIcon.getImage().getScaledInstance(650, 900, Image.SCALE_SMOOTH);
-        imageLabel.setIcon(new ImageIcon(scaledImage));
+        if (imageLogoURL != null) {
+            ImageIcon originalLogo = new ImageIcon(imageLogoURL);
+            Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
+            logoLabel.setIcon(new ImageIcon(scaledLogoImage));
+        }
 
-        Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
-        logoLabel.setIcon(new ImageIcon(scaledLogoImage));
-
-        Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
-        logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
+        if (imageLogoURL2 != null) {
+            ImageIcon originalLogo2 = new ImageIcon(imageLogoURL2);
+            Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
+            logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
+        }
 
         leftJPanel.add(imageLabel);
         imageLabel.add(logoLabel);
         imageLabel.add(headingLabel);
         rightJPanel.add(logoLabel2);
 
-        // --- RIGHT PANEL COMPONENTS (Updated for Sign Up) ---
-
-        // 1. Title and Subtitle
+        // --- RIGHT PANEL COMPONENTS ---
         JLabel titleLabel = new JLabel("Create Your Account", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(themeColor);
@@ -100,15 +88,11 @@ public class SignupFrame extends JFrame {
         JLabel subTitleLabel = new JLabel("Enter your details to get started with our beauty services system.",
                 SwingConstants.CENTER);
         subTitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 20));
-        subTitleLabel.setForeground(
-                new Color(themeColor.getRed() - 30, themeColor.getGreen() - 30, themeColor.getBlue() - 30)); // Slightly
-                                                                                                             // darker
-                                                                                                             // theme
-                                                                                                             // color
+        subTitleLabel.setForeground(themeColor.darker());
         subTitleLabel.setBounds(0, 255, 650, 30);
         rightJPanel.add(subTitleLabel);
 
-        // 2. Name Field
+        // Name Field
         JLabel nameLabel = new JLabel("Full Name: ");
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         nameLabel.setForeground(Color.black);
@@ -122,7 +106,7 @@ public class SignupFrame extends JFrame {
         nameField.setBounds(140, 340, 380, 35);
         rightJPanel.add(nameField);
 
-        // 3. Email Field
+        // Email Field
         JLabel emailLabel = new JLabel("Email Address: ");
         emailLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         emailLabel.setForeground(Color.black);
@@ -136,7 +120,7 @@ public class SignupFrame extends JFrame {
         emailField.setBounds(140, 420, 380, 35);
         rightJPanel.add(emailField);
 
-        // 4. Phone Field
+        // Phone Field
         JLabel phoneLabel = new JLabel("Phone Number: ");
         phoneLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         phoneLabel.setForeground(Color.black);
@@ -150,7 +134,7 @@ public class SignupFrame extends JFrame {
         phoneField.setBounds(140, 500, 380, 35);
         rightJPanel.add(phoneField);
 
-        // 5. Password Field
+        // Password Field
         JLabel passwordLabel = new JLabel("Password: ");
         passwordLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         passwordLabel.setForeground(Color.black);
@@ -164,22 +148,23 @@ public class SignupFrame extends JFrame {
         passwordField.setBounds(140, 580, 380, 35);
         rightJPanel.add(passwordField);
 
-        // 6. Sign Up Button
+        // Sign Up Button
         JButton signupButton = new JButton("Sign Up");
         signupButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
         signupButton.setForeground(Color.WHITE);
         signupButton.setBackground(themeColor);
         signupButton.setBounds(230, 650, 200, 50);
         signupButton.setFocusPainted(false);
+        signupButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(signupButton);
 
-        // 7. Feedback Label
+        // Feedback Label
         JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
         feedbackLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         feedbackLabel.setBounds(100, 720, 450, 30);
         rightJPanel.add(feedbackLabel);
 
-        // 8. Already have an account link
+        // Already have an account link
         JLabel loginLabel = new JLabel("<html>Already have an account? <u>Log In</u></html>", SwingConstants.CENTER);
         loginLabel.setBounds(230, 770, 200, 15);
         loginLabel.setFont(new Font("Arial", Font.PLAIN, 11));
@@ -187,16 +172,15 @@ public class SignupFrame extends JFrame {
         loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(loginLabel);
 
-        // --- ACTION LISTENER for Navigation ---
+        // --- ACTION LISTENERS ---
         loginLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 dispose();
-                new LoginFrame().setVisible(true); // Open the LoginFrame
+                new LoginFrame().setVisible(true);
             }
         });
 
-        // --- ACTION LISTENER for Sign Up ---
         signupButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -205,30 +189,43 @@ public class SignupFrame extends JFrame {
                 String phone = phoneField.getText().trim();
                 String password = new String(passwordField.getPassword());
 
-                // Simple validation for mock sign-up
+                // Validation
                 if (fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                    feedbackLabel.setText("Please fill out all fields.");
+                    feedbackLabel.setText("Please fill out all required fields.");
+                    feedbackLabel.setForeground(Color.RED);
+                    return;
+                }
+
+                if (!email.contains("@") || !email.contains(".")) {
+                    feedbackLabel.setText("Please enter a valid email address.");
                     feedbackLabel.setForeground(Color.RED);
                     return;
                 }
 
                 if (password.length() < 6) {
-                    feedbackLabel.setText("Password must be at least 6 characters long.");
+                    feedbackLabel.setText("Password must be at least 6 characters.");
                     feedbackLabel.setForeground(Color.RED);
                     return;
                 }
 
-                // Mock Sign Up successful
-                feedbackLabel.setText("Sign Up Successful! Welcome, " + fullName + "!");
-                feedbackLabel.setForeground(new Color(34, 139, 34)); // Green color
+                // Register client
+                DataManager dataManager = DataManager.getInstance();
+                Client newClient = dataManager.registerClient(fullName, phone, email, password);
 
-                // Clear fields on success
-                nameField.setText("");
-                emailField.setText("");
-                phoneField.setText("");
-                passwordField.setText("");
+                if (newClient != null) {
+                    feedbackLabel.setText("Registration Successful! Welcome, " + fullName + "!");
+                    feedbackLabel.setForeground(new Color(34, 139, 34));
+
+                    // Clear fields
+                    nameField.setText("");
+                    emailField.setText("");
+                    phoneField.setText("");
+                    passwordField.setText("");
+                } else {
+                    feedbackLabel.setText("Email already registered. Please use another email.");
+                    feedbackLabel.setForeground(Color.RED);
+                }
             }
         });
     }
-
 }

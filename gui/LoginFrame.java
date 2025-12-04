@@ -1,31 +1,18 @@
 package gui;
 
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.URL;
-
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import models.Client;
+import storage.DataManager;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 import javax.swing.border.LineBorder;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.net.URL;
 
 public class LoginFrame extends JFrame {
 
     public LoginFrame() {
         Color themeColor = new Color(128, 207, 192);
 
-        // Original frame dimensions
         setSize(1300, 900);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -36,7 +23,7 @@ public class LoginFrame extends JFrame {
         // --- LEFT PANEL (Image) ---
         JPanel leftJPanel = new JPanel();
         leftJPanel.setBounds(0, 0, 650, 900);
-        leftJPanel.setBackground(new Color(255, 255, 255));
+        leftJPanel.setBackground(Color.WHITE);
         leftJPanel.setLayout(null);
         add(leftJPanel);
 
@@ -47,7 +34,7 @@ public class LoginFrame extends JFrame {
         rightJPanel.setLayout(null);
         add(rightJPanel);
 
-        // --- Image Loading (Using original stretching logic) ---
+        // --- Image Loading ---
         JLabel imageLabel = new JLabel();
         imageLabel.setBounds(0, 0, 650, 900);
         imageLabel.setLayout(null);
@@ -63,22 +50,28 @@ public class LoginFrame extends JFrame {
         headingLabel.setFont(new Font("Arial", Font.BOLD, 19));
         headingLabel.setBounds(150, 515, 580, 50);
 
-        // IMAGES
+        // Load images
         URL imageURL = LoginFrame.class.getClassLoader().getResource("images/backgroundLogo.jpg");
         URL imageLogoURL = LoginFrame.class.getClassLoader().getResource("images/LogoFinal1.png");
         URL imageLogoURL2 = LoginFrame.class.getClassLoader().getResource("images/LogoSalonCare2.png");
-        ImageIcon originalIcon = new ImageIcon(imageURL);
-        ImageIcon originalLogo = new ImageIcon(imageLogoURL);
-        ImageIcon originalLogo2 = new ImageIcon(imageLogoURL2);
 
-        Image scaledImage = originalIcon.getImage().getScaledInstance(650, 900, Image.SCALE_SMOOTH);
-        imageLabel.setIcon(new ImageIcon(scaledImage));
+        if (imageURL != null) {
+            ImageIcon originalIcon = new ImageIcon(imageURL);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(650, 900, Image.SCALE_SMOOTH);
+            imageLabel.setIcon(new ImageIcon(scaledImage));
+        }
 
-        Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
-        logoLabel.setIcon(new ImageIcon(scaledLogoImage));
+        if (imageLogoURL != null) {
+            ImageIcon originalLogo = new ImageIcon(imageLogoURL);
+            Image scaledLogoImage = originalLogo.getImage().getScaledInstance(580, 580, Image.SCALE_SMOOTH);
+            logoLabel.setIcon(new ImageIcon(scaledLogoImage));
+        }
 
-        Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
-        logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
+        if (imageLogoURL2 != null) {
+            ImageIcon originalLogo2 = new ImageIcon(imageLogoURL2);
+            Image scaledLogoImage2 = originalLogo2.getImage().getScaledInstance(400, 400, Image.SCALE_SMOOTH);
+            logoLabel2.setIcon(new ImageIcon(scaledLogoImage2));
+        }
 
         leftJPanel.add(imageLabel);
         imageLabel.add(logoLabel);
@@ -130,6 +123,7 @@ public class LoginFrame extends JFrame {
         loginButton.setBackground(themeColor);
         loginButton.setBounds(230, 500, 200, 50);
         loginButton.setFocusPainted(false);
+        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(loginButton);
 
         JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
@@ -159,10 +153,15 @@ public class LoginFrame extends JFrame {
                 String emailOrPhone = emailPhoneField.getText().trim();
                 String password = new String(passwordField.getPassword());
 
-                if (emailOrPhone.equals("jiellyAbao@gmail.com") && password.equals("password123")) {
+                DataManager dataManager = DataManager.getInstance();
+                Client client = dataManager.authenticateClient(emailOrPhone, password);
+
+                if (client != null) {
                     feedbackLabel.setText("Login Successful! Redirecting...");
                     feedbackLabel.setForeground(new Color(34, 139, 34));
-                    new ClientDashboardFrame().setVisible(true);
+
+                    // Pass the logged-in client to dashboard
+                    new ClientDashboardFrame(client).setVisible(true);
                     dispose();
                 } else {
                     feedbackLabel.setText("Invalid credentials. Please try again.");
@@ -173,5 +172,4 @@ public class LoginFrame extends JFrame {
             }
         });
     }
-
 }

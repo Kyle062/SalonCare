@@ -1,17 +1,17 @@
 package gui;
 
+import models.*;
+import storage.DataManager;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-import models.Appointment;
-import models.Client;
-import models.ServiceItem;
 
 public class AppointmentsPanel extends JPanel {
 
@@ -38,9 +38,11 @@ public class AppointmentsPanel extends JPanel {
     private final Font FONT_BTN = new Font("Segoe UI Semibold", Font.PLAIN, 14);
 
     // Data structures
-    private LinkedList<Appointment> appointmentList = new LinkedList<>();
-    private LinkedList<Appointment> displayedList = new LinkedList<>();
+    private List<Appointment> appointmentList = new LinkedList<>();
+    private List<Appointment> displayedList = new LinkedList<>();
     private Appointment selectedAppointment = null;
+    private Client currentClient;
+    private DataManager dataManager;
 
     // UI components
     private JTable table;
@@ -52,7 +54,9 @@ public class AppointmentsPanel extends JPanel {
     private final int PANEL_WIDTH;
     private final int PANEL_HEIGHT;
 
-    public AppointmentsPanel(int width, int height) {
+    public AppointmentsPanel(int width, int height, Client client) {
+        this.currentClient = client;
+        this.dataManager = DataManager.getInstance();
         this.PANEL_WIDTH = width;
         this.PANEL_HEIGHT = height;
         setLayout(new BorderLayout());
@@ -90,6 +94,8 @@ public class AppointmentsPanel extends JPanel {
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
 
+        // Load appointments from DataManager
+        loadClientAppointments();
         displayedList = new LinkedList<>(appointmentList);
         refreshTable();
 
@@ -103,6 +109,15 @@ public class AppointmentsPanel extends JPanel {
                 }
             }
         });
+    }
+
+    private void loadClientAppointments() {
+        appointmentList.clear();
+
+        // Get appointments for this client from DataManager
+        List<Appointment> clientAppointments = dataManager.getClientAppointments(currentClient.getEmail());
+        appointmentList.addAll(clientAppointments);
+        displayedList = new LinkedList<>(appointmentList);
     }
 
     private JPanel createHeaderPanel(int width) {
@@ -271,7 +286,7 @@ public class AppointmentsPanel extends JPanel {
         formTitle.setFont(FONT_H2);
         formTitle.setForeground(TEXT_PRIMARY);
 
-        JLabel formSubtitle = new JLabel("Fill in the details to book or update an appointment");
+        JLabel formSubtitle = new JLabel("Fill in the details to request an appointment");
         formSubtitle.setFont(FONT_SMALL);
         formSubtitle.setForeground(TEXT_SECONDARY);
 
@@ -295,7 +310,7 @@ public class AppointmentsPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Row 1: Name and Phone - FIXED POSITIONING
+        // Row 1: Name and Phone - Pre-filled with client info
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 1;
@@ -305,7 +320,8 @@ public class AppointmentsPanel extends JPanel {
         gbc.gridx = 1;
         gbc.gridwidth = 1;
         gbc.weightx = 1.0;
-        nameField = createModernTextField("Enter client's full name");
+        nameField = createModernTextField(currentClient.getName());
+        nameField.setEditable(false); // Can't change name
         formContent.add(nameField, gbc);
 
         gbc.gridx = 2;
@@ -316,7 +332,8 @@ public class AppointmentsPanel extends JPanel {
         gbc.gridx = 3;
         gbc.gridwidth = 1;
         gbc.weightx = 1.0;
-        contactField = createModernTextField("e.g., 09123456789");
+        contactField = createModernTextField(currentClient.getPhone());
+        contactField.setEditable(false); // Can't change phone
         formContent.add(contactField, gbc);
 
         // Row 2: Service and Date
@@ -367,15 +384,11 @@ public class AppointmentsPanel extends JPanel {
         JButton cancelBtn = createDangerButton("Cancel Appointment");
         cancelBtn.addActionListener(e -> deleteAppointment());
 
-        JButton updateBtn = createWarningButton("Update Appointment");
-        updateBtn.addActionListener(e -> updateAppointment());
-
-        JButton bookBtn = createSuccessButton("Book Appointment");
+        JButton bookBtn = createSuccessButton("Request Appointment");
         bookBtn.addActionListener(e -> addAppointment());
 
         buttonPanel.add(clearBtn);
         buttonPanel.add(cancelBtn);
-        buttonPanel.add(updateBtn);
         buttonPanel.add(bookBtn);
 
         gbc.gridx = 0;
@@ -549,30 +562,6 @@ public class AppointmentsPanel extends JPanel {
         return button;
     }
 
-    private JButton createWarningButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(FONT_BTN);
-        button.setBackground(WARNING);
-        button.setForeground(TEXT_PRIMARY);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setBorder(new EmptyBorder(12, 30, 12, 30));
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(224, 168, 0));
-                button.setBorder(new EmptyBorder(12, 30, 12, 30));
-            }
-
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(WARNING);
-            }
-        });
-
-        return button;
-    }
-
     private JButton createDangerButton(String text) {
         JButton button = new JButton(text);
         button.setFont(FONT_BTN);
@@ -647,8 +636,8 @@ public class AppointmentsPanel extends JPanel {
     }
 
     private void clearForm() {
-        nameField.setText("");
-        contactField.setText("");
+        nameField.setText(currentClient.getName());
+        contactField.setText(currentClient.getPhone());
         serviceField.setText("");
         dateField.setText("");
         timeField.setText("");
@@ -659,15 +648,11 @@ public class AppointmentsPanel extends JPanel {
 
     private void addAppointment() {
         try {
-            String name = nameField.getText().trim();
-            String contact = contactField.getText().trim();
             String serviceName = serviceField.getText().trim();
             String date = dateField.getText().trim();
             String time = timeField.getText().trim();
 
-            if (name.isEmpty() || contact.isEmpty() || serviceName.isEmpty() ||
-                    date.isEmpty() || time.isEmpty()) {
-
+            if (serviceName.isEmpty() || date.isEmpty() || time.isEmpty()) {
                 showStyledDialog("Warning", "Please fill all required fields (*)",
                         JOptionPane.WARNING_MESSAGE);
                 return;
@@ -678,66 +663,42 @@ public class AppointmentsPanel extends JPanel {
             }
 
             LocalDateTime dt = LocalDateTime.parse(date + " " + time, formatter);
-            Client c = new Client(UUID.randomUUID().toString().substring(0, 8),
-                    name, contact, "N/A", "N/A");
-            ServiceItem s = new ServiceItem(serviceName, 0.0);
-            Appointment a = new Appointment(UUID.randomUUID().toString().substring(0, 8),
-                    c, s, dt);
-            a.setConfirmed(false);
 
-            appointmentList.addFirst(a);
-            displayedList = new LinkedList<>(appointmentList);
+            // Get service from DataManager
+            ServiceItem service = dataManager.getServiceByName(serviceName);
+            if (service == null) {
+                // Create new service if not found
+                service = new ServiceItem(serviceName, 0.0);
+                dataManager.services.add(service);
+            }
 
+            // Create appointment - NOT CONFIRMED (pending staff approval)
+            Appointment a = new Appointment(
+                    UUID.randomUUID().toString(),
+                    currentClient,
+                    service,
+                    dt);
+            a.setConfirmed(false); // Start as pending
+
+            // Add to DataManager
+            dataManager.appointments.addSorted(a);
+
+            // Refresh local list
+            loadClientAppointments();
             refreshTable();
             clearForm();
 
-            showStyledDialog("Success", "Appointment booked successfully!",
+            showStyledDialog("Success",
+                    "Appointment request submitted!\n" +
+                            "Date: " + dt.toLocalDate() + "\n" +
+                            "Time: " + dt.toLocalTime() + "\n" +
+                            "Service: " + serviceName + "\n\n" +
+                            "Status: Pending - Waiting for staff confirmation.",
                     JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception ex) {
             showStyledDialog("Error",
                     "Invalid date/time format!<br>Date: YYYY-MM-DD (e.g., 2024-12-25)<br>Time: HH:mm (e.g., 14:30)",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void updateAppointment() {
-        if (selectedAppointment == null) {
-            showStyledDialog("Warning", "Please select an appointment to update",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        try {
-            String name = nameField.getText().trim();
-            String contact = contactField.getText().trim();
-            String serviceName = serviceField.getText().trim();
-            String date = dateField.getText().trim();
-            String time = timeField.getText().trim();
-
-            if (name.isEmpty() || contact.isEmpty() || serviceName.isEmpty() ||
-                    date.isEmpty() || time.isEmpty()) {
-                showStyledDialog("Warning", "Please fill all required fields (*)",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (!validateDateTime(date, time)) {
-                return;
-            }
-
-            LocalDateTime dt = LocalDateTime.parse(date + " " + time, formatter);
-            selectedAppointment.getClient().setName(name);
-            selectedAppointment.getClient().setPhone(contact);
-            selectedAppointment.getService().setName(serviceName);
-            selectedAppointment.setDateTime(dt);
-
-            refreshTable();
-            showStyledDialog("Success", "Appointment updated successfully!",
-                    JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (Exception ex) {
-            showStyledDialog("Error", "Invalid input: " + ex.getMessage(),
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -763,10 +724,14 @@ public class AppointmentsPanel extends JPanel {
                 JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            appointmentList.remove(selectedAppointment);
-            displayedList = new LinkedList<>(appointmentList);
+            // Remove from DataManager
+            dataManager.appointments.removeById(selectedAppointment.getId());
+
+            // Refresh local list
+            loadClientAppointments();
             refreshTable();
             clearForm();
+
             showStyledDialog("Success", "Appointment cancelled successfully!",
                     JOptionPane.INFORMATION_MESSAGE);
         }
@@ -781,9 +746,10 @@ public class AppointmentsPanel extends JPanel {
             return;
         }
 
-        LinkedList<Appointment> results = new LinkedList<>();
+        List<Appointment> results = new LinkedList<>();
         for (Appointment a : appointmentList) {
-            if (a.getClient().getName().toLowerCase().contains(query.toLowerCase())) {
+            if (a.getClient().getName().toLowerCase().contains(query.toLowerCase()) ||
+                    a.getService().getName().toLowerCase().contains(query.toLowerCase())) {
                 results.add(a);
             }
         }

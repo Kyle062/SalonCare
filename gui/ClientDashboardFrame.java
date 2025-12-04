@@ -1,8 +1,10 @@
 package gui;
 
+import models.Client;
+import models.ServiceItem;
+import storage.DataManager;
 import java.awt.*;
 import java.awt.event.*;
-import java.net.URL;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -13,14 +15,12 @@ public class ClientDashboardFrame extends JFrame {
         final int CARD_PREF_WIDTH = 300;
         final int CARD_PREF_HEIGHT = 380;
         final int IMAGE_HEIGHT = 220;
+        private ServiceItem serviceItem;
         private String serviceNameText;
-        private int ratingGridX = 1;
-        private int ratingGridY = 2;
-        private Insets ratingInsets = new Insets(0, 6, 15, 15);
 
-        public ServiceCard(String serviceName, String price, String imageUrl, Color themeColor, int imageWidth,
-                int imageHeight) {
-            this.serviceNameText = serviceName;
+        public ServiceCard(ServiceItem serviceItem, Color themeColor) {
+            this.serviceItem = serviceItem;
+            this.serviceNameText = serviceItem.getName();
 
             setPreferredSize(new Dimension(CARD_PREF_WIDTH, CARD_PREF_HEIGHT));
             setLayout(new GridBagLayout());
@@ -31,19 +31,17 @@ public class ClientDashboardFrame extends JFrame {
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(0, 0, 0, 0);
 
-            // 1. Service Image
+            // 1. Service Image - Using placeholder or actual image
             JLabel serviceImage = new JLabel();
-            ImageIcon cardImage = scaleImage(imageUrl, CARD_PREF_WIDTH + imageWidth, IMAGE_HEIGHT + imageHeight);
+            // You can load actual images based on service name
+            // For now, using a placeholder
+            serviceImage.setOpaque(true);
+            serviceImage.setBackground(new Color(240, 240, 240));
+            serviceImage.setPreferredSize(new Dimension(CARD_PREF_WIDTH, IMAGE_HEIGHT));
+            serviceImage.setHorizontalAlignment(SwingConstants.CENTER);
+            serviceImage.setText(serviceItem.getName());
+            serviceImage.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
-            if (cardImage != null) {
-                serviceImage.setIcon(cardImage);
-            } else {
-                serviceImage.setText("No Image");
-                serviceImage.setHorizontalAlignment(SwingConstants.CENTER);
-                serviceImage.setOpaque(true);
-                serviceImage.setBackground(new Color(240, 240, 240));
-                serviceImage.setPreferredSize(new Dimension(CARD_PREF_WIDTH, IMAGE_HEIGHT));
-            }
             gbc.gridx = 0;
             gbc.gridy = 0;
             gbc.gridwidth = 2;
@@ -53,7 +51,7 @@ public class ClientDashboardFrame extends JFrame {
             add(serviceImage, gbc);
 
             // 2. Service Name
-            JLabel nameLabel = new JLabel(serviceName);
+            JLabel nameLabel = new JLabel(serviceItem.getName());
             nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
             nameLabel.setForeground(Color.BLACK);
             nameLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -66,7 +64,7 @@ public class ClientDashboardFrame extends JFrame {
             add(nameLabel, gbc);
 
             // 3. Price
-            JLabel priceLabel = new JLabel("₱" + price);
+            JLabel priceLabel = new JLabel("₱" + String.format("%.2f", serviceItem.getPrice()));
             priceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             priceLabel.setForeground(Color.GRAY.darker());
             priceLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -76,27 +74,22 @@ public class ClientDashboardFrame extends JFrame {
             gbc.insets = new Insets(0, 15, 15, 5);
             add(priceLabel, gbc);
 
-            // Rating panel (stars + rating number)
-            JPanel ratingPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-            ratingPanel.setBackground(Color.WHITE);
+            // 4. Book Button
+            JButton bookButton = new JButton("Book Now");
+            bookButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            bookButton.setBackground(themeColor);
+            bookButton.setForeground(Color.WHITE);
+            bookButton.setFocusPainted(false);
+            bookButton.setBorderPainted(false);
+            bookButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            bookButton.addActionListener(e -> bookService(serviceItem));
 
-            JLabel starsLabel = new JLabel("★★★★★");
-            starsLabel.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 14));
-            starsLabel.setForeground(new Color(255, 200, 0));
-
-            JLabel ratingText = new JLabel("5.0");
-            ratingText.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            ratingText.setForeground(Color.GRAY);
-
-            ratingPanel.add(starsLabel);
-            ratingPanel.add(ratingText);
-
-            gbc.gridx = ratingGridX;
-            gbc.gridy = ratingGridY;
-            gbc.insets = ratingInsets;
+            gbc.gridx = 1;
+            gbc.gridy = 2;
+            gbc.insets = new Insets(0, 0, 15, 15);
             gbc.fill = GridBagConstraints.NONE;
             gbc.anchor = GridBagConstraints.EAST;
-            add(ratingPanel, gbc);
+            add(bookButton, gbc);
 
             // Hover effect
             addMouseListener(new MouseAdapter() {
@@ -112,11 +105,16 @@ public class ClientDashboardFrame extends JFrame {
             });
         }
 
-        public String getServiceName() {
-            return serviceNameText;
+        private void bookService(ServiceItem service) {
+            PendingRequestDialog dialog = new PendingRequestDialog(
+                    ClientDashboardFrame.this,
+                    currentClient,
+                    service);
+            dialog.setVisible(true);
         }
     }
 
+    private Client currentClient;
     private JPanel mainContentPanel;
     private JScrollPane scrollPane;
     private JLabel noResultsLabel;
@@ -124,7 +122,7 @@ public class ClientDashboardFrame extends JFrame {
     private JButton myAppointmentsBtn;
     private JPanel rightJPanel;
 
-    // UI Components that need to be accessible
+    // UI Components
     private JLabel servicesTitle;
     private JTextField searchField;
     private JButton searchBtn;
@@ -145,13 +143,15 @@ public class ClientDashboardFrame extends JFrame {
 
     private ViewState currentView = ViewState.SERVICES;
 
-    public ClientDashboardFrame() {
+    public ClientDashboardFrame(Client client) {
+        this.currentClient = client;
+
         // Frame Setup
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
         setLayout(null);
-        setTitle("SalonCare Client Dashboard");
+        setTitle("SalonCare Client Dashboard - Welcome, " + client.getName() + "!");
         setBackground(new Color(245, 245, 245));
 
         setVisible(true);
@@ -178,16 +178,9 @@ public class ClientDashboardFrame extends JFrame {
         logoArea.setBorder(BorderFactory.createLineBorder(Color.WHITE, 5));
         logoArea.setOpaque(false);
 
-        JLabel logoIcon = new JLabel();
-        ImageIcon logoImg = scaleImage("images/logo_placeholder.png", 80, 80);
-
-        if (logoImg != null) {
-            logoIcon.setIcon(logoImg);
-        } else {
-            logoIcon.setText("SC");
-            logoIcon.setFont(new Font("Arial", Font.BOLD, 40));
-            logoIcon.setForeground(Color.WHITE);
-        }
+        JLabel logoIcon = new JLabel("SC");
+        logoIcon.setFont(new Font("Arial", Font.BOLD, 40));
+        logoIcon.setForeground(Color.WHITE);
         logoArea.add(logoIcon);
         leftJPanel.add(logoArea);
 
@@ -322,20 +315,16 @@ public class ClientDashboardFrame extends JFrame {
             }
         });
 
-        // Profile Icon
-        profileIcon = new JLabel();
-        ImageIcon profileImg = scaleImage("images/profile_placeholder.png", 40, 40);
-
-        if (profileImg != null) {
-            profileIcon.setIcon(profileImg);
-        } else {
-            profileIcon.setText("👤");
-            profileIcon.setFont(new Font("Arial", Font.BOLD, 25));
-            profileIcon.setForeground(Color.GRAY);
-        }
-        profileIcon.setBounds(rightPanelWidth - (int) (rightPanelWidth * 0.05) - 40,
-                (int) (topBarHeight * 0.35), 40, 40);
+        // Profile Icon with client name
+        profileIcon = new JLabel(currentClient.getName().substring(0, 1).toUpperCase());
+        profileIcon.setFont(new Font("Arial", Font.BOLD, 20));
+        profileIcon.setForeground(Color.WHITE);
+        profileIcon.setBackground(mintTeal);
+        profileIcon.setOpaque(true);
         profileIcon.setHorizontalAlignment(SwingConstants.CENTER);
+        profileIcon.setBounds(rightPanelWidth - (int) (rightPanelWidth * 0.05) - 50,
+                (int) (topBarHeight * 0.35), 50, 50);
+        profileIcon.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
 
         // Separator Line
         separator = new JPanel();
@@ -349,24 +338,11 @@ public class ClientDashboardFrame extends JFrame {
         mainContentPanel.setBorder(
                 new EmptyBorder(40, (int) (rightPanelWidth * 0.04), 40, (int) (rightPanelWidth * 0.04)));
 
-        // Add Service Cards
-        mainContentPanel.add(new ServiceCard("Signature Haircut", "800.00", "images/haircut.png", mintTeal, 155, 160));
-        mainContentPanel.add(
-                new ServiceCard("Deep Cleansing Facial", "1,500.00", "images/service_facial.jpg", mintTeal, 155, 80));
-        mainContentPanel.add(new ServiceCard("Full Balayage Color", "3,200.00", "images/service_hair_color.jpg",
-                mintTeal, 155, 100));
-        mainContentPanel
-                .add(new ServiceCard("Classic Manicure", "950.00", "images/service_manicure.jpg", mintTeal, 155, 100));
-        mainContentPanel
-                .add(new ServiceCard("Eyebrow Threading", "550.00", "images/service_eyebrow.jpg", mintTeal, 155, 100));
-        mainContentPanel.add(
-                new ServiceCard("Relaxing Body Massage", "1,800.00", "images/service_massage.jpg", mintTeal, 155, 100));
-        mainContentPanel.add(new ServiceCard("Permanent Hair Straight", "4,500.00", "images/service_straight.jpg",
-                mintTeal, 100, 100));
-        mainContentPanel
-                .add(new ServiceCard("Basic Facial", "700.00", "images/service_basic_facial.jpg", mintTeal, 155, 100));
-        mainContentPanel.add(
-                new ServiceCard("Hot Stone Massage", "2,500.00", "images/service_hot_stone.jpg", mintTeal, 155, 100));
+        // Add Service Cards from DataManager
+        DataManager dataManager = DataManager.getInstance();
+        for (ServiceItem service : dataManager.services) {
+            mainContentPanel.add(new ServiceCard(service, mintTeal));
+        }
 
         // Scroll Pane for the main content
         scrollPane = new JScrollPane(mainContentPanel);
@@ -394,7 +370,7 @@ public class ClientDashboardFrame extends JFrame {
             for (java.awt.Component comp : mainContentPanel.getComponents()) {
                 if (comp instanceof ServiceCard) {
                     ServiceCard card = (ServiceCard) comp;
-                    String name = card.getServiceName();
+                    String name = card.serviceNameText;
                     if (name != null && name.toLowerCase().contains(query)) {
                         card.setVisible(true);
                         anyVisible = true;
@@ -464,7 +440,7 @@ public class ClientDashboardFrame extends JFrame {
         rightJPanel.setLayout(new BorderLayout());
 
         // Create and add appointments panel
-        AppointmentsPanel appointmentsPanel = new AppointmentsPanel(width, height);
+        AppointmentsPanel appointmentsPanel = new AppointmentsPanel(width, height, currentClient);
         rightJPanel.add(appointmentsPanel, BorderLayout.CENTER);
 
         // Update button states
@@ -481,18 +457,11 @@ public class ClientDashboardFrame extends JFrame {
     }
 
     public static void main(String[] args) {
+        // For testing only
         javax.swing.SwingUtilities.invokeLater(() -> {
-            new ClientDashboardFrame();
+            DataManager dm = DataManager.getInstance();
+            Client testClient = dm.clients.get(0);
+            new ClientDashboardFrame(testClient);
         });
-    }
-
-    private ImageIcon scaleImage(String path, int width, int height) {
-        URL imgUrl = ClientDashboardFrame.class.getClassLoader().getResource(path);
-        if (imgUrl != null) {
-            ImageIcon originalIcon = new ImageIcon(imgUrl);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(scaledImage);
-        }
-        return null;
     }
 }

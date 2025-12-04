@@ -1,11 +1,7 @@
 package gui;
 
-import models.Appointment;
-import models.Client;
-import models.PendingAppointmentRequest;
-import models.ServiceItem;
+import models.*;
 import storage.DataManager;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -15,54 +11,48 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
-import java.util.Comparator; // For sorting pending requests
+import java.util.Comparator;
 
 public class SalonStaffDashboard extends JFrame {
 
-    private DataManager dataManager = DataManager.getInstance(); // Get singleton instance
+    private DataManager dataManager = DataManager.getInstance();
 
-    // UI Components for the Staff Dashboard
+    // UI Components
     private JPanel contentPane;
     private JTextField clientNameField;
     private JTextField contactNumberField;
     private JComboBox<String> serviceComboBox;
-    private JFormattedTextField dateField; // Using JFormattedTextField for date
+    private JFormattedTextField dateField;
     private JComboBox<String> hourComboBox;
     private JComboBox<String> minuteComboBox;
     private JComboBox<String> ampmComboBox;
-
     private JButton addAppointmentButton;
     private JButton updateExistingButton;
     private JTextField searchClientField;
-    private JPanel scheduledAppointmentsPanel; // Panel to hold appointment cards
-    private JPanel pendingRequestsPanel; // Panel to hold pending request cards
-    private JPanel pendingRequestsContainer; // Scrollable container for pending requests
+    private JPanel scheduledAppointmentsPanel;
+    private JPanel pendingRequestsContainer;
+    private Appointment selectedAppointmentForEdit = null;
 
-    private Appointment selectedAppointmentForEdit = null; // To hold the appointment being edited
-
-    // Date formatter for display
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
-    private static final DateTimeFormatter DATE_INPUT_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     public SalonStaffDashboard() {
         setTitle("SalonCare System - Staff Dashboard");
-        setSize(1200, 800); // Adjusted size for more content
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setResizable(true); // Allow resizing for better layout management
+        setResizable(true);
 
         Color themeColor = new Color(128, 207, 192);
-        Color lightGreen = new Color(224, 247, 245); // Lighter shade for background
-        Color darkerGreen = new Color(100, 180, 170); // Darker shade for buttons
+        Color lightGreen = new Color(224, 247, 245);
+        Color darkerGreen = new Color(100, 180, 170);
 
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         contentPane.setLayout(new BorderLayout(0, 0));
         setContentPane(contentPane);
-        contentPane.setBackground(lightGreen); // Set overall background
+        contentPane.setBackground(lightGreen);
 
         // Top Panel for Title and Logout
         JPanel topPanel = new JPanel();
@@ -83,13 +73,12 @@ public class SalonStaffDashboard extends JFrame {
         logoutButton.setFocusPainted(false);
         logoutButton.setBorderPainted(false);
         logoutButton.addActionListener(e -> {
-            // Handle logout logic, e.g., show login frame
             new LoginFrame().setVisible(true);
             dispose();
         });
         topPanel.add(logoutButton, BorderLayout.EAST);
 
-        // Main content panel using GridBagLayout for better structure
+        // Main content panel
         JPanel mainContentPanel = new JPanel(new GridBagLayout());
         mainContentPanel.setBackground(lightGreen);
         contentPane.add(mainContentPanel, BorderLayout.CENTER);
@@ -104,15 +93,15 @@ public class SalonStaffDashboard extends JFrame {
         newAppointmentPanel.setBorder(BorderFactory.createTitledBorder(
                 new LineBorder(themeColor, 2), "NEW APPOINTMENT FORM", 0, 0,
                 new Font("Segoe UI", Font.BOLD, 16), themeColor));
-        newAppointmentPanel.setLayout(new GridBagLayout()); // Use GridBagLayout for inner form
-        newAppointmentPanel.setPreferredSize(new Dimension(400, 600)); // Fixed width for form
+        newAppointmentPanel.setLayout(new GridBagLayout());
+        newAppointmentPanel.setPreferredSize(new Dimension(400, 600));
 
         GridBagConstraints formGbc = new GridBagConstraints();
         formGbc.insets = new Insets(5, 5, 5, 5);
         formGbc.fill = GridBagConstraints.HORIZONTAL;
         formGbc.weightx = 1.0;
 
-        // Client Name
+        // Form fields (same as before)...
         formGbc.gridx = 0;
         formGbc.gridy = 0;
         newAppointmentPanel.add(new JLabel("Client Name:"), formGbc);
@@ -120,35 +109,31 @@ public class SalonStaffDashboard extends JFrame {
         clientNameField = new JTextField(20);
         newAppointmentPanel.add(clientNameField, formGbc);
 
-        // Contact Number
         formGbc.gridy = 2;
         newAppointmentPanel.add(new JLabel("Contact Number:"), formGbc);
         formGbc.gridy = 3;
         contactNumberField = new JTextField(20);
         newAppointmentPanel.add(contactNumberField, formGbc);
 
-        // Type of Service
         formGbc.gridy = 4;
         newAppointmentPanel.add(new JLabel("Type of Service:"), formGbc);
         formGbc.gridy = 5;
         serviceComboBox = new JComboBox<>();
-        loadServiceItems(); // Populate combo box
+        loadServiceItems();
         newAppointmentPanel.add(serviceComboBox, formGbc);
 
-        // Appointment Date
         formGbc.gridy = 6;
         newAppointmentPanel.add(new JLabel("Appointment Date:"), formGbc);
         formGbc.gridy = 7;
-        dateField = new JFormattedTextField(DATE_INPUT_FORMATTER);
-        dateField.setValue(LocalDate.now()); // Set default to today
+        dateField = new JFormattedTextField(new java.text.SimpleDateFormat("MM/dd/yyyy"));
+        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
         dateField.setColumns(10);
         newAppointmentPanel.add(dateField, formGbc);
 
-        // Time (Hour, Minute, AM/PM)
         formGbc.gridy = 8;
         newAppointmentPanel.add(new JLabel("Time:"), formGbc);
         formGbc.gridy = 9;
-        JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); // No gaps
+        JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         timePanel.setBackground(Color.WHITE);
         hourComboBox = new JComboBox<>();
         for (int i = 1; i <= 12; i++) {
@@ -159,21 +144,19 @@ public class SalonStaffDashboard extends JFrame {
         timePanel.add(hourComboBox);
         timePanel.add(new JLabel(":"));
         minuteComboBox = new JComboBox<>();
-        for (int i = 0; i < 60; i += 5) { // Intervals of 5 minutes
+        for (int i = 0; i < 60; i += 5) {
             minuteComboBox.addItem(String.format("%02d", i));
         }
-        minuteComboBox.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5)); // Snap to nearest
-                                                                                                      // 5 min
+        minuteComboBox.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5));
         timePanel.add(minuteComboBox);
         ampmComboBox = new JComboBox<>(new String[] { "AM", "PM" });
         ampmComboBox.setSelectedItem(LocalTime.now().getHour() >= 12 ? "PM" : "AM");
         timePanel.add(ampmComboBox);
         newAppointmentPanel.add(timePanel, formGbc);
 
-        // Add Appointment Button
         formGbc.gridy = 10;
-        formGbc.ipady = 10; // Add padding
-        formGbc.insets = new Insets(20, 5, 5, 5); // Top padding
+        formGbc.ipady = 10;
+        formGbc.insets = new Insets(20, 5, 5, 5);
         addAppointmentButton = new JButton("ADD APPOINTMENT");
         addAppointmentButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         addAppointmentButton.setBackground(darkerGreen);
@@ -181,21 +164,19 @@ public class SalonStaffDashboard extends JFrame {
         addAppointmentButton.setFocusPainted(false);
         newAppointmentPanel.add(addAppointmentButton, formGbc);
 
-        // Update Existing Button
         formGbc.gridy = 11;
-        formGbc.insets = new Insets(5, 5, 20, 5); // Bottom padding
+        formGbc.insets = new Insets(5, 5, 20, 5);
         updateExistingButton = new JButton("UPDATE EXISTING");
         updateExistingButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        updateExistingButton.setBackground(themeColor.darker()); // Slightly darker theme color
+        updateExistingButton.setBackground(themeColor.darker());
         updateExistingButton.setForeground(Color.WHITE);
         updateExistingButton.setFocusPainted(false);
-        updateExistingButton.setEnabled(false); // Disabled until an appointment is selected for edit
+        updateExistingButton.setEnabled(false);
         newAppointmentPanel.add(updateExistingButton, formGbc);
 
-        // Add newAppointmentPanel to mainContentPanel
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.weightx = 0.3; // Take 30% of width
+        gbc.weightx = 0.3;
         gbc.weighty = 1.0;
         mainContentPanel.add(newAppointmentPanel, gbc);
 
@@ -204,9 +185,9 @@ public class SalonStaffDashboard extends JFrame {
         rightSidePanel.setBackground(lightGreen);
 
         GridBagConstraints rightGbc = new GridBagConstraints();
-        rightGbc.insets = new Insets(0, 0, 10, 0); // No top inset for the search bar
+        rightGbc.insets = new Insets(0, 0, 10, 0);
 
-        // Search Bar for Scheduled Appointments
+        // Search Bar
         JPanel searchPanel = new JPanel(new BorderLayout(5, 5));
         searchPanel.setBackground(Color.WHITE);
         searchClientField = new JTextField(25);
@@ -218,22 +199,17 @@ public class SalonStaffDashboard extends JFrame {
         searchButton.setFocusPainted(false);
         searchButton.addActionListener(e -> refreshScheduledAppointments(searchClientField.getText()));
 
-        // // searchPanel.add(new JLabel(new
-        // // 
-        // // 
-        // // n(getClass().getResource("/images/search_icon.png"))),
-        // // BorderLayout.WEST); // Assuming you have a search icon
-        // // searchPanel.add(searchClientField, BorderLayout.CENTER);
-        // // searchPanel.add(searchButton, BorderLayout.EAST);
-        // // searchPanel.setBorder(new EmptyBorder(5, 5, 5, 5)); // Padding for search bar
+        searchPanel.add(searchClientField, BorderLayout.CENTER);
+        searchPanel.add(searchButton, BorderLayout.EAST);
+        searchPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        // rightGbc.gridx = 0;
-        // rightGbc.gridy = 0;
-        // rightGbc.weightx = .0;
-        // rightGbc.fill = GriBagConstraints.HORIZONTAL;
-        // rightSidePanel.add(rightGbc);
+        rightGbc.gridx = 0;
+        rightGbc.gridy = 0;
+        rightGbc.weightx = 1.0;
+        rightGbc.fill = GridBagConstraints.HORIZONTAL;
+        rightSidePanel.add(searchPanel, rightGbc);
 
-        // Scheduled Appointments Scroll Pane
+        // Scheduled Appointments
         scheduledAppointmentsPanel = new JPanel();
         scheduledAppointmentsPanel.setLayout(new BoxLayout(scheduledAppointmentsPanel, BoxLayout.Y_AXIS));
         scheduledAppointmentsPanel.setBackground(Color.WHITE);
@@ -242,11 +218,11 @@ public class SalonStaffDashboard extends JFrame {
         scheduledScrollPane.setBorder(BorderFactory.createTitledBorder(
                 new LineBorder(themeColor, 2), "SCHEDULED APPOINTMENTS", 0, 0,
                 new Font("Segoe UI", Font.BOLD, 16), themeColor));
-        scheduledScrollPane.getVerticalScrollBar().setUnitIncrement(16); // Smoother scrolling
+        scheduledScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         rightGbc.gridx = 0;
         rightGbc.gridy = 1;
-        rightGbc.weighty = 0.6; // Take 60% of vertical space
+        rightGbc.weighty = 0.6;
         rightGbc.fill = GridBagConstraints.BOTH;
         rightSidePanel.add(scheduledScrollPane, rightGbc);
 
@@ -260,22 +236,21 @@ public class SalonStaffDashboard extends JFrame {
         pendingScrollPane.setBorder(BorderFactory.createTitledBorder(
                 new LineBorder(themeColor, 2), "PENDING CLIENT REQUESTS", 0, 0,
                 new Font("Segoe UI", Font.BOLD, 16), themeColor));
-        pendingScrollPane.getVerticalScrollBar().setUnitIncrement(16); // Smoother scrolling
+        pendingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         rightGbc.gridx = 0;
         rightGbc.gridy = 2;
-        rightGbc.weighty = 0.4; // Take 40% of vertical space
+        rightGbc.weighty = 0.4;
         rightGbc.fill = GridBagConstraints.BOTH;
         rightSidePanel.add(pendingScrollPane, rightGbc);
 
-        // Add rightSidePanel to mainContentPanel
         gbc.gridx = 1;
         gbc.gridy = 0;
-        gbc.weightx = 0.7; // Take 70% of width
+        gbc.weightx = 0.7;
         gbc.weighty = 1.0;
         mainContentPanel.add(rightSidePanel, gbc);
 
-        // Initial load of appointments and requests
+        // Initial load
         refreshScheduledAppointments(null);
         refreshPendingRequests();
         addListeners();
@@ -292,17 +267,15 @@ public class SalonStaffDashboard extends JFrame {
         updateExistingButton.addActionListener(this::updateAppointment);
     }
 
-    // --- Core Logic for Appointments ---
     private void addAppointment(ActionEvent e) {
         String clientName = clientNameField.getText().trim();
         String contactNumber = contactNumberField.getText().trim();
         String serviceName = (String) serviceComboBox.getSelectedItem();
-        String dateStr = dateField.getText().trim();
         String hourStr = (String) hourComboBox.getSelectedItem();
         String minuteStr = (String) minuteComboBox.getSelectedItem();
         String ampm = (String) ampmComboBox.getSelectedItem();
 
-        if (clientName.isEmpty() || contactNumber.isEmpty() || serviceName == null || dateStr.isEmpty()) {
+        if (clientName.isEmpty() || contactNumber.isEmpty() || serviceName == null) {
             JOptionPane.showMessageDialog(this, "Please fill in all appointment details.", "Input Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -310,26 +283,8 @@ public class SalonStaffDashboard extends JFrame {
 
         Client client = dataManager.getClientByEmailOrPhone(contactNumber);
         if (client == null) {
-            // If client doesn't exist, create a new one for this appointment
             client = new Client(UUID.randomUUID().toString(), clientName, contactNumber, "", "");
             dataManager.clients.add(client);
-            // Optionally, prompt staff if they want to save full client details
-        } else if (!client.getName().equalsIgnoreCase(clientName)) {
-            // Warn if contact number matches existing client but name is different
-            int response = JOptionPane.showConfirmDialog(this,
-                    "Contact number matches an existing client (" + client.getName()
-                            + "). Do you want to use the existing client's data or create a new client?",
-                    "Client Conflict", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (response == JOptionPane.YES_OPTION) {
-                // Use existing client, update name if needed
-                client.setName(clientName);
-            } else if (response == JOptionPane.NO_OPTION) {
-                // Create new client (generate new ID)
-                client = new Client(UUID.randomUUID().toString(), clientName, contactNumber, "", "");
-                dataManager.clients.add(client);
-            } else {
-                return; // Cancel operation
-            }
         }
 
         ServiceItem service = dataManager.getServiceByName(serviceName);
@@ -344,13 +299,21 @@ public class SalonStaffDashboard extends JFrame {
             if (ampm.equals("PM") && hour != 12) {
                 hour += 12;
             } else if (ampm.equals("AM") && hour == 12) {
-                hour = 0; // 12 AM is 00:00
+                hour = 0;
             }
             LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
-            LocalDate date = LocalDate.parse(dateStr, DATE_INPUT_FORMATTER);
+
+            java.util.Date dateValue = (java.util.Date) dateField.getValue();
+            if (dateValue == null) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid date.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
             appointmentDateTime = LocalDateTime.of(date, time);
-        } catch (DateTimeParseException | NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid date or time format.", "Input Error",
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Invalid date or time format: " + ex.getMessage(), "Input Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -364,6 +327,7 @@ public class SalonStaffDashboard extends JFrame {
 
         Appointment newAppointment = new Appointment(UUID.randomUUID().toString(), client, service,
                 appointmentDateTime);
+        newAppointment.setConfirmed(true); // Directly confirmed by staff
         dataManager.appointments.addSorted(newAppointment);
         JOptionPane.showMessageDialog(this, "Appointment added successfully!", "Success",
                 JOptionPane.INFORMATION_MESSAGE);
@@ -381,12 +345,11 @@ public class SalonStaffDashboard extends JFrame {
         String clientName = clientNameField.getText().trim();
         String contactNumber = contactNumberField.getText().trim();
         String serviceName = (String) serviceComboBox.getSelectedItem();
-        String dateStr = dateField.getText().trim();
         String hourStr = (String) hourComboBox.getSelectedItem();
         String minuteStr = (String) minuteComboBox.getSelectedItem();
         String ampm = (String) ampmComboBox.getSelectedItem();
 
-        if (clientName.isEmpty() || contactNumber.isEmpty() || serviceName == null || dateStr.isEmpty()) {
+        if (clientName.isEmpty() || contactNumber.isEmpty() || serviceName == null) {
             JOptionPane.showMessageDialog(this, "Please fill in all appointment details.", "Input Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -435,10 +398,20 @@ public class SalonStaffDashboard extends JFrame {
                 hour = 0; // 12 AM is 00:00
             }
             LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
-            LocalDate date = LocalDate.parse(dateStr, DATE_INPUT_FORMATTER);
+
+            // FIXED: Use getValue() instead of getText()
+            java.util.Date dateValue = (java.util.Date) dateField.getValue();
+            if (dateValue == null) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid date.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Convert java.util.Date to LocalDate
+            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
             appointmentDateTime = LocalDateTime.of(date, time);
-        } catch (DateTimeParseException | NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Invalid date or time format.", "Input Error",
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Invalid date or time format: " + ex.getMessage(), "Input Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -479,9 +452,8 @@ public class SalonStaffDashboard extends JFrame {
         addAppointmentButton.setEnabled(true); // Re-enable add button
     }
 
-    // --- UI Update Methods ---
     private void refreshScheduledAppointments(String searchText) {
-        scheduledAppointmentsPanel.removeAll(); // Clear existing cards
+        scheduledAppointmentsPanel.removeAll();
         List<Appointment> currentAppointments;
 
         if (searchText == null || searchText.trim().isEmpty()) {
@@ -494,7 +466,7 @@ public class SalonStaffDashboard extends JFrame {
             JLabel noAppointmentsLabel = new JLabel("No scheduled appointments found.", SwingConstants.CENTER);
             noAppointmentsLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
             noAppointmentsLabel.setForeground(Color.GRAY);
-            noAppointmentsLabel.setBorder(new EmptyBorder(50, 0, 50, 0)); // Add some padding
+            noAppointmentsLabel.setBorder(new EmptyBorder(50, 0, 50, 0));
             scheduledAppointmentsPanel.add(noAppointmentsLabel);
         } else {
             for (int i = 0; i < currentAppointments.size(); i++) {
@@ -510,10 +482,9 @@ public class SalonStaffDashboard extends JFrame {
     }
 
     private void refreshPendingRequests() {
-        pendingRequestsContainer.removeAll(); // Clear existing requests
+        pendingRequestsContainer.removeAll();
 
-        List<PendingAppointmentRequest> requests = dataManager.pendingRequests;
-        // Sort requests by preferred date/time for better readability
+        List<PendingAppointmentRequest> requests = dataManager.getPendingRequests();
         requests.sort(Comparator.comparing(PendingAppointmentRequest::getPreferredDateTime));
 
         if (requests.isEmpty()) {
@@ -535,32 +506,30 @@ public class SalonStaffDashboard extends JFrame {
         JPanel card = new JPanel(new BorderLayout(5, 5));
         card.setBorder(new LineBorder(new Color(192, 192, 192), 1, true));
         card.setBackground(Color.WHITE);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120)); // Fixed height for cards
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
-        // Display details
         JPanel detailsPanel = new JPanel(new GridLayout(4, 1));
         detailsPanel.setBackground(Color.WHITE);
         detailsPanel.setBorder(new EmptyBorder(5, 10, 5, 5));
         detailsPanel.add(new JLabel("Name: " + appointment.getClientName()));
         detailsPanel.add(new JLabel("Service: " + appointment.getServiceName()));
         detailsPanel.add(new JLabel("Date: " + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[0] + " "
-                + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[1])); // Date part
+                + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[1]));
         detailsPanel.add(new JLabel("Time: " + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[2] + " "
-                + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[3])); // Time part
+                + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[3]));
 
         card.add(detailsPanel, BorderLayout.CENTER);
 
-        // Action buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         buttonPanel.setBackground(Color.WHITE);
         JButton editButton = new JButton("EDIT");
-        editButton.setBackground(new Color(60, 179, 113)); // Medium Sea Green
+        editButton.setBackground(new Color(60, 179, 113));
         editButton.setForeground(Color.WHITE);
         editButton.setFocusPainted(false);
         editButton.addActionListener(e -> populateFormForEdit(appointment));
 
         JButton cancelButton = new JButton("CANCEL");
-        cancelButton.setBackground(new Color(220, 20, 60)); // Crimson Red
+        cancelButton.setBackground(new Color(220, 20, 60));
         cancelButton.setForeground(Color.WHITE);
         cancelButton.setFocusPainted(false);
         cancelButton.addActionListener(e -> confirmCancelAppointment(appointment));
@@ -572,13 +541,27 @@ public class SalonStaffDashboard extends JFrame {
         return card;
     }
 
+    private JLabel createArrowLabel() {
+        // Create a down arrow label
+        JLabel arrowLabel = new JLabel("<html><center>&darr;</center></html>", SwingConstants.CENTER);
+        arrowLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        arrowLabel.setForeground(new Color(150, 150, 150));
+        arrowLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        arrowLabel.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+        // Optional: Add some styling
+        arrowLabel.setOpaque(true);
+        arrowLabel.setBackground(new Color(245, 245, 245));
+
+        return arrowLabel;
+    }
+
     private JPanel createPendingRequestCard(PendingAppointmentRequest request) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
-        card.setBorder(new LineBorder(new Color(255, 165, 0), 1, true)); // Orange border for pending
-        card.setBackground(new Color(255, 250, 240)); // Light yellowish background
+        card.setBorder(new LineBorder(new Color(255, 165, 0), 1, true));
+        card.setBackground(new Color(255, 250, 240));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
-        // Details
         JPanel detailsPanel = new JPanel(new GridLayout(4, 1));
         detailsPanel.setBackground(card.getBackground());
         detailsPanel.setBorder(new EmptyBorder(5, 10, 5, 5));
@@ -588,21 +571,20 @@ public class SalonStaffDashboard extends JFrame {
         detailsPanel.add(new JLabel("Preferred: " + request.getPreferredDateTime().format(DATE_TIME_FORMATTER)));
         detailsPanel.add(new JLabel("Msg: " + (request.getClientMessage().isEmpty() ? "N/A"
                 : request.getClientMessage().substring(0, Math.min(request.getClientMessage().length(), 40))
-                        + (request.getClientMessage().length() > 40 ? "..." : "")))); // Truncate long messages
+                        + (request.getClientMessage().length() > 40 ? "..." : ""))));
 
         card.add(detailsPanel, BorderLayout.CENTER);
 
-        // Action buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         buttonPanel.setBackground(card.getBackground());
         JButton approveButton = new JButton("Approve");
-        approveButton.setBackground(new Color(34, 139, 34)); // Forest Green
+        approveButton.setBackground(new Color(34, 139, 34));
         approveButton.setForeground(Color.WHITE);
         approveButton.setFocusPainted(false);
         approveButton.addActionListener(e -> approveRequest(request));
 
         JButton rejectButton = new JButton("Reject");
-        rejectButton.setBackground(new Color(178, 34, 34)); // Firebrick Red
+        rejectButton.setBackground(new Color(178, 34, 34));
         rejectButton.setForeground(Color.WHITE);
         rejectButton.setFocusPainted(false);
         rejectButton.addActionListener(e -> rejectRequest(request));
@@ -614,14 +596,47 @@ public class SalonStaffDashboard extends JFrame {
         return card;
     }
 
-    private JLabel createArrowLabel() {
-        // You might want a custom arrow image instead of text
-        JLabel arrowLabel = new JLabel("<html>&darr;</html>", SwingConstants.CENTER); // Down arrow
-        arrowLabel.setFont(new Font("Arial", Font.BOLD, 24));
-        arrowLabel.setForeground(new Color(150, 150, 150));
-        arrowLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Center the arrow horizontally
-        arrowLabel.setBorder(new EmptyBorder(0, 0, 0, 0)); // Remove default padding
-        return arrowLabel;
+    private void approveRequest(PendingAppointmentRequest request) {
+        // Check for conflicts
+        if (dataManager.appointments.hasConflict(request.getClient(), request.getPreferredDateTime())) {
+            JOptionPane.showMessageDialog(this,
+                    "Client " + request.getClient().getName() + " already has an appointment at "
+                            + request.getPreferredDateTime().format(DATE_TIME_FORMATTER)
+                            + ". Please choose another time or resolve the conflict manually.",
+                    "Scheduling Conflict", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Appointment newAppointment = new Appointment(
+                UUID.randomUUID().toString(),
+                request.getClient(),
+                request.getService(),
+                request.getPreferredDateTime());
+        newAppointment.setConfirmed(true); // Mark as confirmed
+
+        dataManager.appointments.addSorted(newAppointment);
+        dataManager.removePendingRequest(request.getRequestId());
+
+        JOptionPane.showMessageDialog(this,
+                "Appointment for " + request.getClient().getName() + " approved and added to schedule.",
+                "Request Approved", JOptionPane.INFORMATION_MESSAGE);
+        refreshScheduledAppointments(null);
+        refreshPendingRequests();
+    }
+
+    private void rejectRequest(PendingAppointmentRequest request) {
+        int response = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to reject the request from " + request.getClient().getName() + " for "
+                        + request.getService().getName() + " on "
+                        + request.getPreferredDateTime().format(DATE_TIME_FORMATTER) + "?",
+                "Confirm Rejection", JOptionPane.YES_NO_OPTION);
+
+        if (response == JOptionPane.YES_OPTION) {
+            dataManager.removePendingRequest(request.getRequestId());
+            JOptionPane.showMessageDialog(this, "Request from " + request.getClient().getName() + " rejected.",
+                    "Request Rejected", JOptionPane.INFORMATION_MESSAGE);
+            refreshPendingRequests();
+        }
     }
 
     private void populateFormForEdit(Appointment appointment) {
@@ -630,7 +645,7 @@ public class SalonStaffDashboard extends JFrame {
         contactNumberField.setText(appointment.getClientContact());
         serviceComboBox.setSelectedItem(appointment.getServiceName());
 
-        dateField.setValue(appointment.getDateTime().toLocalDate());
+        dateField.setValue(java.sql.Date.valueOf(appointment.getDateTime().toLocalDate()));
 
         LocalTime time = appointment.getDateTime().toLocalTime();
         int hour = time.getHour();
@@ -641,10 +656,10 @@ public class SalonStaffDashboard extends JFrame {
                 hour -= 12;
         }
         if (hour == 0)
-            hour = 12; // 00:xx becomes 12:xx AM
+            hour = 12;
 
         hourComboBox.setSelectedItem(String.format("%02d", hour));
-        minuteComboBox.setSelectedItem(String.format("%02d", (time.getMinute() / 5) * 5)); // Snap to nearest 5 min
+        minuteComboBox.setSelectedItem(String.format("%02d", (time.getMinute() / 5) * 5));
         ampmComboBox.setSelectedItem(ampm);
 
         addAppointmentButton.setEnabled(false);
@@ -669,55 +684,11 @@ public class SalonStaffDashboard extends JFrame {
         }
     }
 
-    private void approveRequest(PendingAppointmentRequest request) {
-        // Staff can optionally modify details before approving.
-        // For simplicity, we'll directly convert it to an Appointment.
-
-        // Check for conflicts before approving
-        if (dataManager.appointments.hasConflict(request.getClient(), request.getPreferredDateTime())) {
-            JOptionPane.showMessageDialog(this,
-                    "Client " + request.getClient().getName() + " already has an appointment at "
-                            + request.getPreferredDateTime().format(DATE_TIME_FORMATTER)
-                            + ". Please choose another time or resolve the conflict manually.",
-                    "Scheduling Conflict", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Appointment newAppointment = new Appointment(
-                UUID.randomUUID().toString(), // Generate new ID for the actual appointment
-                request.getClient(),
-                request.getService(),
-                request.getPreferredDateTime());
-        dataManager.appointments.addSorted(newAppointment);
-        dataManager.removePendingRequest(request.getRequestId()); // Remove from pending list
-
-        JOptionPane.showMessageDialog(this,
-                "Appointment for " + request.getClient().getName() + " approved and added to schedule.",
-                "Request Approved", JOptionPane.INFORMATION_MESSAGE);
-        refreshScheduledAppointments(null);
-        refreshPendingRequests();
-    }
-
-    private void rejectRequest(PendingAppointmentRequest request) {
-        int response = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to reject the request from " + request.getClient().getName() + " for "
-                        + request.getService().getName() + " on "
-                        + request.getPreferredDateTime().format(DATE_TIME_FORMATTER) + "?",
-                "Confirm Rejection", JOptionPane.YES_NO_OPTION);
-
-        if (response == JOptionPane.YES_OPTION) {
-            dataManager.removePendingRequest(request.getRequestId());
-            JOptionPane.showMessageDialog(this, "Request from " + request.getClient().getName() + " rejected.",
-                    "Request Rejected", JOptionPane.INFORMATION_MESSAGE);
-            refreshPendingRequests();
-        }
-    }
-
     private void clearForm() {
         clientNameField.setText("");
         contactNumberField.setText("");
         serviceComboBox.setSelectedIndex(0);
-        dateField.setValue(LocalDate.now());
+        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
         hourComboBox.setSelectedItem(
                 String.format("%02d", LocalTime.now().getHour() % 12 == 0 ? 12 : LocalTime.now().getHour() % 12));
         minuteComboBox.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5));
@@ -729,8 +700,7 @@ public class SalonStaffDashboard extends JFrame {
     }
 
     public static void main(String[] args) {
-        // Initialize DataManager with some seed data
-        DataManager.getInstance(); // Ensure data is seeded before UI loads
+        DataManager.getInstance();
         SwingUtilities.invokeLater(() -> new SalonStaffDashboard().setVisible(true));
     }
 }
