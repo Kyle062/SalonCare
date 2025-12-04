@@ -163,7 +163,7 @@ public class ClientDashboardFrame extends JFrame {
         int buttonHeight = (int) (FRAME_HEIGHT * 0.05);
         int buttonX = (LEFT_PANEL_WIDTH - buttonWidth) / 2;
 
-        servicesBtn = new JButton("View Services");
+        servicesBtn = new JButton("Home");
         servicesBtn.setFont(new Font("Segoe UI", Font.BOLD, 18));
         servicesBtn.setBounds(buttonX, buttonYStart, buttonWidth, buttonHeight);
         servicesBtn.setBackground(mintTeal);
