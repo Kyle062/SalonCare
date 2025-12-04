@@ -11,6 +11,7 @@ public class DataManager {
     public final List<ServiceItem> services = new ArrayList<>();
     public final AppointmentLinkedList appointments = new AppointmentLinkedList();
     public final List<PendingAppointmentRequest> pendingRequests = new ArrayList<>();
+    public final List<CancellationRequest> cancellationRequests = new ArrayList<>(); // NEW
 
     private static DataManager instance;
 
@@ -31,6 +32,10 @@ public class DataManager {
         clients.add(new Client("C002", "John Cruz", "09187654321", "john@example.com", "pass123"));
         clients.add(new Client("C003", "Anna Lee", "09191112222", "anna@example.com", "pass123"));
         clients.add(new Client("C004", "Jielly Abao", "09123456789", "jiellyAbao@gmail.com", "password123"));
+
+        // Seed staff
+        clients.add(new Client("S001", "Admin Staff", "09100000001", "staff@salon.com", "staff123", true));
+        clients.add(new Client("S002", "Jane Smith", "09100000002", "staff2@salon.com", "staff123", true));
 
         // Seed services
         services.add(new ServiceItem("Signature Haircut", 800.00));
@@ -55,14 +60,27 @@ public class DataManager {
 
         Appointment appt2 = new Appointment(UUID.randomUUID().toString(), john, facial,
                 LocalDateTime.of(2025, 12, 13, 14, 0));
-        appt2.setConfirmed(false);
+        appt2.setConfirmed(true);
 
         appointments.addSorted(appt1);
         appointments.addSorted(appt2);
     }
 
+    // --- Helper methods to convert to List ---
+    public List<ServiceItem> getServicesList() {
+        return new ArrayList<>(services);
+    }
+
+    public List<Appointment> getAppointmentsList() {
+        return appointments.toList();
+    }
+
+    public List<CancellationRequest> getCancellationRequestsList() {
+        return new ArrayList<>(cancellationRequests);
+    }
+
     // --- Client Management ---
-    public Client registerClient(String name, String phone, String email, String password) {
+    public Client registerClient(String name, String phone, String email, String password, boolean isStaff) {
         // Check if email already exists
         for (Client client : clients) {
             if (client.getEmail().equalsIgnoreCase(email)) {
@@ -70,10 +88,21 @@ public class DataManager {
             }
         }
 
-        String id = "C" + String.format("%03d", clients.size() + 1);
-        Client newClient = new Client(id, name, phone, email, password);
+        String id;
+        if (isStaff) {
+            id = "S" + String.format("%03d", clients.stream().filter(c -> c.isStaff()).count() + 1);
+        } else {
+            id = "C" + String.format("%03d", clients.stream().filter(c -> !c.isStaff()).count() + 1);
+        }
+
+        Client newClient = new Client(id, name, phone, email, password, isStaff);
         clients.add(newClient);
         return newClient;
+    }
+
+    // Overloaded for regular client registration
+    public Client registerClient(String name, String phone, String email, String password) {
+        return registerClient(name, phone, email, password, false);
     }
 
     public Client authenticateClient(String emailOrPhone, String password) {
@@ -127,16 +156,24 @@ public class DataManager {
         return clientAppointments;
     }
 
-    // --- Pending Requests ---
-    public void addPendingRequest(PendingAppointmentRequest request) {
-        pendingRequests.add(request);
+    // --- Cancellation Requests ---
+    public void addCancellationRequest(CancellationRequest request) {
+        cancellationRequests.add(request);
     }
 
-    public void removePendingRequest(String requestId) {
-        pendingRequests.removeIf(req -> req.getRequestId().equals(requestId));
+    public void removeCancellationRequest(String requestId) {
+        cancellationRequests.removeIf(req -> req.getRequestId().equals(requestId));
     }
 
-    public List<PendingAppointmentRequest> getPendingRequests() {
-        return new ArrayList<>(pendingRequests);
+    public void approveCancellation(String requestId) {
+        CancellationRequest request = cancellationRequests.stream()
+                .filter(req -> req.getRequestId().equals(requestId))
+                .findFirst()
+                .orElse(null);
+
+        if (request != null) {
+            appointments.removeById(request.getAppointmentId());
+            cancellationRequests.remove(request);
+        }
     }
 }

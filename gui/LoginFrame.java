@@ -160,8 +160,12 @@ public class LoginFrame extends JFrame {
                     feedbackLabel.setText("Login Successful! Redirecting...");
                     feedbackLabel.setForeground(new Color(34, 139, 34));
 
-                    // Pass the logged-in client to dashboard
-                    new ClientDashboardFrame(client).setVisible(true);
+                    // Route based on user type
+                    if (client.isStaff()) {
+                        new SalonStaffDashboard().setVisible(true);
+                    } else {
+                        new ClientDashboardFrame(client).setVisible(true);
+                    }
                     dispose();
                 } else {
                     feedbackLabel.setText("Invalid credentials. Please try again.");

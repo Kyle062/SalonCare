@@ -148,12 +148,36 @@ public class SignupFrame extends JFrame {
         passwordField.setBounds(140, 580, 380, 35);
         rightJPanel.add(passwordField);
 
+        // User Type Radio Buttons
+        JLabel userTypeLabel = new JLabel("Register as: ");
+        userTypeLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        userTypeLabel.setForeground(Color.black);
+        userTypeLabel.setBounds(140, 620, 100, 20);
+        rightJPanel.add(userTypeLabel);
+
+        JRadioButton clientRadio = new JRadioButton("Client");
+        clientRadio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        clientRadio.setSelected(true);
+        clientRadio.setBackground(Color.WHITE);
+        clientRadio.setBounds(250, 620, 80, 20);
+        rightJPanel.add(clientRadio);
+
+        JRadioButton staffRadio = new JRadioButton("Staff");
+        staffRadio.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        staffRadio.setBackground(Color.WHITE);
+        staffRadio.setBounds(340, 620, 80, 20);
+        rightJPanel.add(staffRadio);
+
+        ButtonGroup userTypeGroup = new ButtonGroup();
+        userTypeGroup.add(clientRadio);
+        userTypeGroup.add(staffRadio);
+
         // Sign Up Button
         JButton signupButton = new JButton("Sign Up");
         signupButton.setFont(new Font("Segoe UI", Font.BOLD, 22));
         signupButton.setForeground(Color.WHITE);
         signupButton.setBackground(themeColor);
-        signupButton.setBounds(230, 650, 200, 50);
+        signupButton.setBounds(230, 670, 200, 50);
         signupButton.setFocusPainted(false);
         signupButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightJPanel.add(signupButton);
@@ -161,12 +185,12 @@ public class SignupFrame extends JFrame {
         // Feedback Label
         JLabel feedbackLabel = new JLabel("", SwingConstants.CENTER);
         feedbackLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        feedbackLabel.setBounds(100, 720, 450, 30);
+        feedbackLabel.setBounds(100, 740, 450, 30);
         rightJPanel.add(feedbackLabel);
 
         // Already have an account link
         JLabel loginLabel = new JLabel("<html>Already have an account? <u>Log In</u></html>", SwingConstants.CENTER);
-        loginLabel.setBounds(230, 770, 200, 15);
+        loginLabel.setBounds(230, 790, 200, 15);
         loginLabel.setFont(new Font("Arial", Font.PLAIN, 11));
         loginLabel.setForeground(Color.black);
         loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -188,6 +212,7 @@ public class SignupFrame extends JFrame {
                 String email = emailField.getText().trim();
                 String phone = phoneField.getText().trim();
                 String password = new String(passwordField.getPassword());
+                boolean isStaff = staffRadio.isSelected();
 
                 // Validation
                 if (fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
@@ -208,11 +233,12 @@ public class SignupFrame extends JFrame {
                     return;
                 }
 
-                // Register client
+                // Register client/staff
                 DataManager dataManager = DataManager.getInstance();
-                Client newClient = dataManager.registerClient(fullName, phone, email, password);
+                Client newUser = dataManager.registerClient(fullName, phone, email, password, isStaff);
 
-                if (newClient != null) {
+                if (newUser != null) {
+                    String userType = isStaff ? "Staff" : "Client";
                     feedbackLabel.setText("Registration Successful! Welcome, " + fullName + "!");
                     feedbackLabel.setForeground(new Color(34, 139, 34));
 
@@ -221,6 +247,7 @@ public class SignupFrame extends JFrame {
                     emailField.setText("");
                     phoneField.setText("");
                     passwordField.setText("");
+                    clientRadio.setSelected(true);
                 } else {
                     feedbackLabel.setText("Email already registered. Please use another email.");
                     feedbackLabel.setForeground(Color.RED);

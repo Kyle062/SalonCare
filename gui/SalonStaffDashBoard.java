@@ -32,7 +32,7 @@ public class SalonStaffDashboard extends JFrame {
     private JButton updateExistingButton;
     private JTextField searchClientField;
     private JPanel scheduledAppointmentsPanel;
-    private JPanel pendingRequestsContainer;
+    private JPanel cancellationRequestsContainer; // Changed from pendingRequestsContainer
     private Appointment selectedAppointmentForEdit = null;
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
@@ -101,7 +101,6 @@ public class SalonStaffDashboard extends JFrame {
         formGbc.fill = GridBagConstraints.HORIZONTAL;
         formGbc.weightx = 1.0;
 
-        // Form fields (same as before)...
         formGbc.gridx = 0;
         formGbc.gridy = 0;
         newAppointmentPanel.add(new JLabel("Client Name:"), formGbc);
@@ -180,7 +179,7 @@ public class SalonStaffDashboard extends JFrame {
         gbc.weighty = 1.0;
         mainContentPanel.add(newAppointmentPanel, gbc);
 
-        // --- Right Panel: Scheduled Appointments and Pending Requests ---
+        // --- Right Panel: Scheduled Appointments and Cancellation Requests ---
         JPanel rightSidePanel = new JPanel(new GridBagLayout());
         rightSidePanel.setBackground(lightGreen);
 
@@ -226,23 +225,23 @@ public class SalonStaffDashboard extends JFrame {
         rightGbc.fill = GridBagConstraints.BOTH;
         rightSidePanel.add(scheduledScrollPane, rightGbc);
 
-        // Pending Requests Panel
-        pendingRequestsContainer = new JPanel();
-        pendingRequestsContainer.setLayout(new BoxLayout(pendingRequestsContainer, BoxLayout.Y_AXIS));
-        pendingRequestsContainer.setBackground(Color.WHITE);
+        // Cancellation Requests Panel
+        cancellationRequestsContainer = new JPanel();
+        cancellationRequestsContainer.setLayout(new BoxLayout(cancellationRequestsContainer, BoxLayout.Y_AXIS));
+        cancellationRequestsContainer.setBackground(Color.WHITE);
 
-        JScrollPane pendingScrollPane = new JScrollPane(pendingRequestsContainer);
-        pendingScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        pendingScrollPane.setBorder(BorderFactory.createTitledBorder(
-                new LineBorder(themeColor, 2), "PENDING CLIENT REQUESTS", 0, 0,
-                new Font("Segoe UI", Font.BOLD, 16), themeColor));
-        pendingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        JScrollPane cancellationScrollPane = new JScrollPane(cancellationRequestsContainer);
+        cancellationScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        cancellationScrollPane.setBorder(BorderFactory.createTitledBorder(
+                new LineBorder(new Color(255, 165, 0), 2), "PENDING CANCELLATION REQUESTS", 0, 0,
+                new Font("Segoe UI", Font.BOLD, 16), new Color(255, 165, 0)));
+        cancellationScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         rightGbc.gridx = 0;
         rightGbc.gridy = 2;
         rightGbc.weighty = 0.4;
         rightGbc.fill = GridBagConstraints.BOTH;
-        rightSidePanel.add(pendingScrollPane, rightGbc);
+        rightSidePanel.add(cancellationScrollPane, rightGbc);
 
         gbc.gridx = 1;
         gbc.gridy = 0;
@@ -252,7 +251,7 @@ public class SalonStaffDashboard extends JFrame {
 
         // Initial load
         refreshScheduledAppointments(null);
-        refreshPendingRequests();
+        refreshCancellationRequests();
         addListeners();
     }
 
@@ -327,7 +326,7 @@ public class SalonStaffDashboard extends JFrame {
 
         Appointment newAppointment = new Appointment(UUID.randomUUID().toString(), client, service,
                 appointmentDateTime);
-        newAppointment.setConfirmed(true); // Directly confirmed by staff
+        newAppointment.setConfirmed(true);
         dataManager.appointments.addSorted(newAppointment);
         JOptionPane.showMessageDialog(this, "Appointment added successfully!", "Success",
                 JOptionPane.INFORMATION_MESSAGE);
@@ -361,7 +360,6 @@ public class SalonStaffDashboard extends JFrame {
             dataManager.clients.add(client);
         } else if (!client.getId().equals(selectedAppointmentForEdit.getClient().getId())
                 && !client.getName().equalsIgnoreCase(clientName)) {
-            // If contact matches a different client, ask for clarification
             int response = JOptionPane.showConfirmDialog(this,
                     "Contact number matches a different existing client (" + client.getName()
                             + "). Do you want to change this appointment's client to the matching one, or update the current client's contact?",
@@ -369,16 +367,14 @@ public class SalonStaffDashboard extends JFrame {
             if (response == JOptionPane.YES_OPTION) {
                 selectedAppointmentForEdit.setClient(client);
             } else if (response == JOptionPane.NO_OPTION) {
-                // Update the original client's contact number or create new if truly distinct
                 Client originalClient = selectedAppointmentForEdit.getClient();
-                originalClient.setName(clientName); // Update name in original client
-                originalClient.setPhone(contactNumber); // Update phone in original client
-                client = originalClient; // Use original client with updated details
+                originalClient.setName(clientName);
+                originalClient.setPhone(contactNumber);
+                client = originalClient;
             } else {
-                return; // Cancel update operation
+                return;
             }
         } else {
-            // Update selected appointment's client details if they changed
             selectedAppointmentForEdit.getClient().setName(clientName);
             selectedAppointmentForEdit.getClient().setPhone(contactNumber);
         }
@@ -395,11 +391,10 @@ public class SalonStaffDashboard extends JFrame {
             if (ampm.equals("PM") && hour != 12) {
                 hour += 12;
             } else if (ampm.equals("AM") && hour == 12) {
-                hour = 0; // 12 AM is 00:00
+                hour = 0;
             }
             LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
 
-            // FIXED: Use getValue() instead of getText()
             java.util.Date dateValue = (java.util.Date) dateField.getValue();
             if (dateValue == null) {
                 JOptionPane.showMessageDialog(this, "Please enter a valid date.", "Input Error",
@@ -407,7 +402,6 @@ public class SalonStaffDashboard extends JFrame {
                 return;
             }
 
-            // Convert java.util.Date to LocalDate
             LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
             appointmentDateTime = LocalDateTime.of(date, time);
         } catch (Exception ex) {
@@ -416,12 +410,8 @@ public class SalonStaffDashboard extends JFrame {
             return;
         }
 
-        // Check for conflicts with OTHER appointments (excluding the one being edited)
         if (!selectedAppointmentForEdit.getDateTime().equals(appointmentDateTime)
                 || !selectedAppointmentForEdit.getClient().getId().equals(client.getId())) {
-            // Only check for conflict if date/time or client has changed
-            // Iterate through the raw list to find conflicts excluding the current
-            // appointment
             for (Appointment existingAppt : dataManager.appointments.toList()) {
                 if (!existingAppt.getId().equals(selectedAppointmentForEdit.getId()) &&
                         existingAppt.getClient().getId().equals(client.getId()) &&
@@ -434,12 +424,10 @@ public class SalonStaffDashboard extends JFrame {
             }
         }
 
-        // Update the fields of the selected appointment
-        selectedAppointmentForEdit.setClient(client); // Set potentially new or updated client
+        selectedAppointmentForEdit.setClient(client);
         selectedAppointmentForEdit.setService(service);
         selectedAppointmentForEdit.setDateTime(appointmentDateTime);
 
-        // Re-add to ensure sorting is maintained if date/time changed
         dataManager.appointments.removeById(selectedAppointmentForEdit.getId());
         dataManager.appointments.addSorted(selectedAppointmentForEdit);
 
@@ -447,9 +435,9 @@ public class SalonStaffDashboard extends JFrame {
                 JOptionPane.INFORMATION_MESSAGE);
         clearForm();
         refreshScheduledAppointments(null);
-        selectedAppointmentForEdit = null; // Clear selection after update
-        updateExistingButton.setEnabled(false); // Disable update button
-        addAppointmentButton.setEnabled(true); // Re-enable add button
+        selectedAppointmentForEdit = null;
+        updateExistingButton.setEnabled(false);
+        addAppointmentButton.setEnabled(true);
     }
 
     private void refreshScheduledAppointments(String searchText) {
@@ -472,7 +460,7 @@ public class SalonStaffDashboard extends JFrame {
             for (int i = 0; i < currentAppointments.size(); i++) {
                 Appointment appointment = currentAppointments.get(i);
                 scheduledAppointmentsPanel.add(createAppointmentCard(appointment));
-                if (i < currentAppointments.size() - 1) { // Add arrow between cards
+                if (i < currentAppointments.size() - 1) {
                     scheduledAppointmentsPanel.add(createArrowLabel());
                 }
             }
@@ -481,25 +469,25 @@ public class SalonStaffDashboard extends JFrame {
         scheduledAppointmentsPanel.repaint();
     }
 
-    private void refreshPendingRequests() {
-        pendingRequestsContainer.removeAll();
+    private void refreshCancellationRequests() {
+        cancellationRequestsContainer.removeAll();
 
-        List<PendingAppointmentRequest> requests = dataManager.getPendingRequests();
-        requests.sort(Comparator.comparing(PendingAppointmentRequest::getPreferredDateTime));
+        List<CancellationRequest> requests = dataManager.getCancellationRequestsList();
+        requests.sort(Comparator.comparing(CancellationRequest::getRequestDateTime));
 
         if (requests.isEmpty()) {
-            JLabel noRequestsLabel = new JLabel("No pending requests.", SwingConstants.CENTER);
+            JLabel noRequestsLabel = new JLabel("No pending cancellation requests.", SwingConstants.CENTER);
             noRequestsLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
             noRequestsLabel.setForeground(Color.GRAY);
             noRequestsLabel.setBorder(new EmptyBorder(50, 0, 50, 0));
-            pendingRequestsContainer.add(noRequestsLabel);
+            cancellationRequestsContainer.add(noRequestsLabel);
         } else {
-            for (PendingAppointmentRequest request : requests) {
-                pendingRequestsContainer.add(createPendingRequestCard(request));
+            for (CancellationRequest request : requests) {
+                cancellationRequestsContainer.add(createCancellationRequestCard(request));
             }
         }
-        pendingRequestsContainer.revalidate();
-        pendingRequestsContainer.repaint();
+        cancellationRequestsContainer.revalidate();
+        cancellationRequestsContainer.repaint();
     }
 
     private JPanel createAppointmentCard(Appointment appointment) {
@@ -542,52 +530,47 @@ public class SalonStaffDashboard extends JFrame {
     }
 
     private JLabel createArrowLabel() {
-        // Create a down arrow label
         JLabel arrowLabel = new JLabel("<html><center>&darr;</center></html>", SwingConstants.CENTER);
         arrowLabel.setFont(new Font("Arial", Font.BOLD, 24));
         arrowLabel.setForeground(new Color(150, 150, 150));
         arrowLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         arrowLabel.setBorder(new EmptyBorder(5, 0, 5, 0));
-
-        // Optional: Add some styling
         arrowLabel.setOpaque(true);
         arrowLabel.setBackground(new Color(245, 245, 245));
-
         return arrowLabel;
     }
 
-    private JPanel createPendingRequestCard(PendingAppointmentRequest request) {
+    private JPanel createCancellationRequestCard(CancellationRequest request) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
         card.setBorder(new LineBorder(new Color(255, 165, 0), 1, true));
         card.setBackground(new Color(255, 250, 240));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 140));
 
-        JPanel detailsPanel = new JPanel(new GridLayout(4, 1));
+        JPanel detailsPanel = new JPanel(new GridLayout(5, 1));
         detailsPanel.setBackground(card.getBackground());
         detailsPanel.setBorder(new EmptyBorder(5, 10, 5, 5));
-        detailsPanel.add(
-                new JLabel("Client: " + request.getClient().getName() + " (" + request.getClient().getPhone() + ")"));
+        detailsPanel.add(new JLabel("Client: " + request.getClient().getName()));
         detailsPanel.add(new JLabel("Service: " + request.getService().getName()));
-        detailsPanel.add(new JLabel("Preferred: " + request.getPreferredDateTime().format(DATE_TIME_FORMATTER)));
-        detailsPanel.add(new JLabel("Msg: " + (request.getClientMessage().isEmpty() ? "N/A"
-                : request.getClientMessage().substring(0, Math.min(request.getClientMessage().length(), 40))
-                        + (request.getClientMessage().length() > 40 ? "..." : ""))));
+        detailsPanel.add(new JLabel("Scheduled: " + request.getAppointmentDateTime().format(DATE_TIME_FORMATTER)));
+        detailsPanel.add(new JLabel("Requested: " + request.getRequestDateTime().format(DATE_TIME_FORMATTER)));
+        detailsPanel.add(new JLabel("Reason: " + request.getReason()));
 
         card.add(detailsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         buttonPanel.setBackground(card.getBackground());
+
         JButton approveButton = new JButton("Approve");
         approveButton.setBackground(new Color(34, 139, 34));
         approveButton.setForeground(Color.WHITE);
         approveButton.setFocusPainted(false);
-        approveButton.addActionListener(e -> approveRequest(request));
+        approveButton.addActionListener(e -> approveCancellation(request));
 
         JButton rejectButton = new JButton("Reject");
         rejectButton.setBackground(new Color(178, 34, 34));
         rejectButton.setForeground(Color.WHITE);
         rejectButton.setFocusPainted(false);
-        rejectButton.addActionListener(e -> rejectRequest(request));
+        rejectButton.addActionListener(e -> rejectCancellation(request));
 
         buttonPanel.add(approveButton);
         buttonPanel.add(rejectButton);
@@ -596,46 +579,38 @@ public class SalonStaffDashboard extends JFrame {
         return card;
     }
 
-    private void approveRequest(PendingAppointmentRequest request) {
-        // Check for conflicts
-        if (dataManager.appointments.hasConflict(request.getClient(), request.getPreferredDateTime())) {
-            JOptionPane.showMessageDialog(this,
-                    "Client " + request.getClient().getName() + " already has an appointment at "
-                            + request.getPreferredDateTime().format(DATE_TIME_FORMATTER)
-                            + ". Please choose another time or resolve the conflict manually.",
-                    "Scheduling Conflict", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Appointment newAppointment = new Appointment(
-                UUID.randomUUID().toString(),
-                request.getClient(),
-                request.getService(),
-                request.getPreferredDateTime());
-        newAppointment.setConfirmed(true); // Mark as confirmed
-
-        dataManager.appointments.addSorted(newAppointment);
-        dataManager.removePendingRequest(request.getRequestId());
-
-        JOptionPane.showMessageDialog(this,
-                "Appointment for " + request.getClient().getName() + " approved and added to schedule.",
-                "Request Approved", JOptionPane.INFORMATION_MESSAGE);
-        refreshScheduledAppointments(null);
-        refreshPendingRequests();
-    }
-
-    private void rejectRequest(PendingAppointmentRequest request) {
+    private void approveCancellation(CancellationRequest request) {
         int response = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to reject the request from " + request.getClient().getName() + " for "
-                        + request.getService().getName() + " on "
-                        + request.getPreferredDateTime().format(DATE_TIME_FORMATTER) + "?",
-                "Confirm Rejection", JOptionPane.YES_NO_OPTION);
+                "Are you sure you want to approve the cancellation request from " +
+                        request.getClient().getName() + "?\n\nThis will remove the appointment permanently.",
+                "Confirm Cancellation Approval",
+                JOptionPane.YES_NO_OPTION);
 
         if (response == JOptionPane.YES_OPTION) {
-            dataManager.removePendingRequest(request.getRequestId());
-            JOptionPane.showMessageDialog(this, "Request from " + request.getClient().getName() + " rejected.",
-                    "Request Rejected", JOptionPane.INFORMATION_MESSAGE);
-            refreshPendingRequests();
+            dataManager.approveCancellation(request.getRequestId());
+            JOptionPane.showMessageDialog(this,
+                    "Cancellation approved. Appointment removed from schedule.",
+                    "Cancellation Approved",
+                    JOptionPane.INFORMATION_MESSAGE);
+            refreshScheduledAppointments(null);
+            refreshCancellationRequests();
+        }
+    }
+
+    private void rejectCancellation(CancellationRequest request) {
+        int response = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to reject the cancellation request from " +
+                        request.getClient().getName() + "?\n\nThe appointment will remain scheduled.",
+                "Confirm Cancellation Rejection",
+                JOptionPane.YES_NO_OPTION);
+
+        if (response == JOptionPane.YES_OPTION) {
+            dataManager.removeCancellationRequest(request.getRequestId());
+            JOptionPane.showMessageDialog(this,
+                    "Cancellation request rejected. Appointment remains scheduled.",
+                    "Cancellation Rejected",
+                    JOptionPane.INFORMATION_MESSAGE);
+            refreshCancellationRequests();
         }
     }
 

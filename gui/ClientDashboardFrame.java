@@ -26,7 +26,7 @@ public class ClientDashboardFrame extends JFrame {
             setLayout(new GridBagLayout());
             setBackground(Color.WHITE);
             setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
-            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR)); // Changed from HAND_CURSOR to DEFAULT
 
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(0, 0, 0, 0);
@@ -70,47 +70,13 @@ public class ClientDashboardFrame extends JFrame {
             priceLabel.setHorizontalAlignment(SwingConstants.LEFT);
             gbc.gridx = 0;
             gbc.gridy = 2;
-            gbc.gridwidth = 1;
-            gbc.insets = new Insets(0, 15, 15, 5);
+            gbc.gridwidth = 2; // Changed from 1 to 2 to span full width
+            gbc.insets = new Insets(0, 15, 15, 15); // Adjusted insets
             add(priceLabel, gbc);
 
-            // 4. Book Button
-            JButton bookButton = new JButton("Book Now");
-            bookButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            bookButton.setBackground(themeColor);
-            bookButton.setForeground(Color.WHITE);
-            bookButton.setFocusPainted(false);
-            bookButton.setBorderPainted(false);
-            bookButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            bookButton.addActionListener(e -> bookService(serviceItem));
+            // REMOVED: Book Now button section
 
-            gbc.gridx = 1;
-            gbc.gridy = 2;
-            gbc.insets = new Insets(0, 0, 15, 15);
-            gbc.fill = GridBagConstraints.NONE;
-            gbc.anchor = GridBagConstraints.EAST;
-            add(bookButton, gbc);
-
-            // Hover effect
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    setBorder(BorderFactory.createLineBorder(themeColor, 2));
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
-                }
-            });
-        }
-
-        private void bookService(ServiceItem service) {
-            PendingRequestDialog dialog = new PendingRequestDialog(
-                    ClientDashboardFrame.this,
-                    currentClient,
-                    service);
-            dialog.setVisible(true);
+            // REMOVED: Hover effect (since no more interactive elements)
         }
     }
 

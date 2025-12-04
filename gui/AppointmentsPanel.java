@@ -2,9 +2,9 @@ package gui;
 
 import models.*;
 import storage.DataManager;
+
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.*;
@@ -15,613 +15,540 @@ import java.util.UUID;
 
 public class AppointmentsPanel extends JPanel {
 
-    // Modern color palette
-    private final Color PRIMARY = new Color(128, 207, 192); // Mint Teal
-    private final Color PRIMARY_DARK = new Color(110, 187, 172);
-    private final Color DANGER = new Color(220, 80, 80);
-    private final Color SUCCESS = new Color(40, 167, 69);
-    private final Color WARNING = new Color(255, 193, 7);
-
-    private final Color BG_LIGHT = Color.WHITE; // Changed to white to match dashboard
-    private final Color CARD_WHITE = Color.WHITE;
-    private final Color BORDER = new Color(222, 226, 230);
+    // Colors & fonts
+    private final Color BG_PANEL = new Color(207, 236, 232);
+    private final Color LEFT_CARD_BG = new Color(226, 243, 240);
+    private final Color WHITE = Color.WHITE;
+    private final Color PRIMARY = new Color(34, 150, 150);
+    private final Color BTN_BLUE = new Color(59, 153, 160);
+    private final Color BLUE_CARD = new Color(178, 231, 243);
     private final Color TEXT_PRIMARY = new Color(33, 37, 41);
-    private final Color TEXT_SECONDARY = new Color(108, 117, 125);
-    private final Color HOVER = new Color(245, 247, 250);
+    private final Color BORDER = new Color(200, 210, 210);
+    private final Color ARROW_COLOR = new Color(100, 100, 100);
+    private final Color DANGER_RED = new Color(220, 53, 69);
 
-    // Modern fonts
-    private final Font FONT_H1 = new Font("Segoe UI", Font.BOLD, 36); // Matching dashboard
-    private final Font FONT_H2 = new Font("Segoe UI", Font.BOLD, 20);
-    private final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 14);
-    private final Font FONT_BODY_BOLD = new Font("Segoe UI", Font.BOLD, 14);
-    private final Font FONT_SMALL = new Font("Segoe UI", Font.PLAIN, 12);
-    private final Font FONT_BTN = new Font("Segoe UI Semibold", Font.PLAIN, 14);
+    private final Font H1 = new Font("Segoe UI", Font.BOLD, 28);
+    private final Font H2 = new Font("Segoe UI", Font.BOLD, 20);
+    private final Font BODY = new Font("Segoe UI", Font.PLAIN, 14);
+    private final Font BODY_BOLD = new Font("Segoe UI", Font.BOLD, 14);
 
-    // Data structures
+    // Data
+    private DataManager dataManager;
+    private Client currentClient;
     private List<Appointment> appointmentList = new LinkedList<>();
     private List<Appointment> displayedList = new LinkedList<>();
     private Appointment selectedAppointment = null;
-    private Client currentClient;
-    private DataManager dataManager;
 
     // UI components
-    private JTable table;
-    private DefaultTableModel tableModel;
     private JTextField searchField;
-    private JTextField nameField, contactField, serviceField, dateField, timeField;
+    private JPanel appointmentsListPanel;
+    private JPanel timelinePanel;
+    private JTextField nameField, contactField, emailField;
+    private JComboBox<String> serviceCombo;
+    private JComboBox<String> hourCombo, minuteCombo, ampmCombo;
+    private JFormattedTextField dateField;
+    private JButton addAppointmentBtn, editBtn, cancelBtn;
+    private JLabel statusLabel;
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private final int PANEL_WIDTH;
-    private final int PANEL_HEIGHT;
+    // Arrow panel for connecting appointments
+    private JPanel arrowsPanel;
+
+    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     public AppointmentsPanel(int width, int height, Client client) {
         this.currentClient = client;
         this.dataManager = DataManager.getInstance();
-        this.PANEL_WIDTH = width;
-        this.PANEL_HEIGHT = height;
-        setLayout(new BorderLayout());
-        setBackground(BG_LIGHT);
 
-        // Create main panel with proper dimensions
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(BG_LIGHT);
-        mainPanel.setPreferredSize(new Dimension(width, height));
+        setLayout(null);
+        setBackground(BG_PANEL);
+        setPreferredSize(new Dimension(width, height));
+        setBounds(0, 0, width, height);
 
-        // Header panel with proper positioning
-        JPanel headerPanel = createHeaderPanel(width);
-        mainPanel.add(headerPanel, BorderLayout.NORTH);
-
-        // Center content with proper spacing
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 20));
-        centerPanel.setBackground(BG_LIGHT);
-        centerPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
-
-        // Table panel - using exact dimensions
-        JPanel tablePanel = createTablePanel(width);
-        centerPanel.add(tablePanel, BorderLayout.NORTH);
-
-        // Form panel - using exact dimensions
-        JPanel formPanel = createFormPanel(width);
-        centerPanel.add(formPanel, BorderLayout.CENTER);
-
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // Add to main panel
-        JScrollPane scrollPane = new JScrollPane(mainPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        setLayout(new BorderLayout());
-        add(scrollPane, BorderLayout.CENTER);
-
-        // Load appointments from DataManager
+        createComponents();
         loadClientAppointments();
-        displayedList = new LinkedList<>(appointmentList);
-        refreshTable();
+        refreshAppointments();
+    }
 
-        // Table selection listener
-        table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int r = table.getSelectedRow();
-                if (r >= 0 && r < displayedList.size()) {
-                    selectedAppointment = displayedList.get(r);
-                    populateFormWithAppointment(selectedAppointment);
-                }
+    private void createComponents() {
+        createTopBar();
+        createLeftFormPanel();
+        createRightPanel();
+        createTimelinePanel();
+    }
+
+    private void createTopBar() {
+        // Centered search field
+        JPanel searchWrapper = new RoundedPanel(30, WHITE);
+        searchWrapper.setBounds(250, 30, 520, 52);
+        searchWrapper.setLayout(new BorderLayout(10, 0));
+
+        searchField = new JTextField();
+        searchField.setFont(BODY);
+        searchField.setBorder(null);
+        searchField.setOpaque(false);
+        searchField.putClientProperty("JTextField.placeholderText", "Search appointments by service or name...");
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                searchAppointment();
             }
         });
+
+        JLabel searchIcon = new JLabel("🔍");
+        searchIcon.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        searchIcon.setBorder(new EmptyBorder(0, 15, 0, 10));
+
+        searchWrapper.add(searchField, BorderLayout.CENTER);
+        searchWrapper.add(searchIcon, BorderLayout.WEST);
+        add(searchWrapper);
+
+        // Top-right action buttons
+        editBtn = createRoundedBlueButton("Edit Appointment");
+        editBtn.setBounds(800, 35, 180, 40);
+        editBtn.addActionListener(e -> editSelectedAppointment());
+        editBtn.setEnabled(false);
+        add(editBtn);
+
+        cancelBtn = createRoundedRedButton("Cancel Appointment");
+        cancelBtn.setBounds(1000, 35, 180, 40);
+        cancelBtn.addActionListener(e -> deleteSelectedAppointment());
+        cancelBtn.setEnabled(false);
+        add(cancelBtn);
+
+        // Status label for messages
+        statusLabel = new JLabel("Ready");
+        statusLabel.setBounds(250, 85, 500, 25);
+        statusLabel.setFont(BODY);
+        statusLabel.setForeground(new Color(80, 80, 80));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        add(statusLabel);
+    }
+
+    private void createLeftFormPanel() {
+        // Left form panel container
+        JPanel leftPanel = new JPanel();
+        leftPanel.setBounds(40, 120, 450, 580);
+        leftPanel.setBackground(LEFT_CARD_BG);
+        leftPanel.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(20, 24, 20, 24)));
+        leftPanel.setLayout(null);
+        add(leftPanel);
+
+        // Title with plus icon
+        JLabel plus = new JLabel("➕");
+        plus.setBounds(20, 15, 40, 40);
+        plus.setFont(new Font("Segoe UI", Font.PLAIN, 34));
+        leftPanel.add(plus);
+
+        JLabel title = new JLabel("New Appointment");
+        title.setBounds(70, 20, 250, 30);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        leftPanel.add(title);
+
+        // Form fields
+        int y = 80;
+        int labelWidth = 150;
+        int fieldWidth = 200;
+        int fieldHeight = 32;
+
+        // Fullname
+        JLabel nameLabel = new JLabel("Full Name:");
+        nameLabel.setBounds(20, y, labelWidth, 24);
+        nameLabel.setFont(BODY_BOLD);
+        leftPanel.add(nameLabel);
+
+        nameField = new JTextField();
+        nameField.setBounds(180, y, fieldWidth, fieldHeight);
+        nameField.setFont(BODY);
+        nameField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
+        nameField.setEditable(false);
+        leftPanel.add(nameField);
+        y += 45;
+
+        // Contact
+        JLabel contactLabel = new JLabel("Phone Number:");
+        contactLabel.setBounds(20, y, labelWidth, 24);
+        contactLabel.setFont(BODY_BOLD);
+        leftPanel.add(contactLabel);
+
+        contactField = new JTextField();
+        contactField.setBounds(180, y, fieldWidth, fieldHeight);
+        contactField.setFont(BODY);
+        contactField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
+        contactField.setEditable(false);
+        leftPanel.add(contactField);
+        y += 45;
+
+        // Email
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setBounds(20, y, labelWidth, 24);
+        emailLabel.setFont(BODY_BOLD);
+        leftPanel.add(emailLabel);
+
+        emailField = new JTextField();
+        emailField.setBounds(180, y, fieldWidth, fieldHeight);
+        emailField.setFont(BODY);
+        emailField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
+        emailField.setEditable(false);
+        leftPanel.add(emailField);
+        y += 45;
+
+        // Service Dropdown
+        JLabel serviceLabel = new JLabel("Service:*");
+        serviceLabel.setBounds(20, y, labelWidth, 24);
+        serviceLabel.setFont(BODY_BOLD);
+        leftPanel.add(serviceLabel);
+
+        serviceCombo = new JComboBox<>();
+        // Get services from DataManager
+        List<ServiceItem> services = dataManager.getServicesList();
+        for (ServiceItem service : services) {
+            serviceCombo.addItem(service.getName());
+        }
+        serviceCombo.setBounds(180, y, fieldWidth, fieldHeight);
+        serviceCombo.setFont(BODY);
+        leftPanel.add(serviceCombo);
+        y += 45;
+
+        // Date Field (formatted)
+        JLabel dateLabel = new JLabel("Date (MM/DD/YYYY):*");
+        dateLabel.setBounds(20, y, labelWidth, 24);
+        dateLabel.setFont(BODY_BOLD);
+        leftPanel.add(dateLabel);
+
+        dateField = new JFormattedTextField(new java.text.SimpleDateFormat("MM/dd/yyyy"));
+        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
+        dateField.setBounds(180, y, fieldWidth, fieldHeight);
+        dateField.setFont(BODY);
+        dateField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
+        leftPanel.add(dateField);
+        y += 45;
+
+        // Time Selection
+        JLabel timeLabel = new JLabel("Time:*");
+        timeLabel.setBounds(20, y, labelWidth, 24);
+        timeLabel.setFont(BODY_BOLD);
+        leftPanel.add(timeLabel);
+
+        JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        timePanel.setBounds(180, y, fieldWidth, fieldHeight);
+        timePanel.setOpaque(false);
+
+        hourCombo = new JComboBox<>();
+        for (int i = 1; i <= 12; i++) {
+            hourCombo.addItem(String.format("%02d", i));
+        }
+        hourCombo.setSelectedItem(String.format("%02d",
+                LocalTime.now().getHour() % 12 == 0 ? 12 : LocalTime.now().getHour() % 12));
+        hourCombo.setFont(BODY);
+        timePanel.add(hourCombo);
+
+        timePanel.add(new JLabel(":"));
+
+        minuteCombo = new JComboBox<>();
+        for (int i = 0; i < 60; i += 5) {
+            minuteCombo.addItem(String.format("%02d", i));
+        }
+        minuteCombo.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5));
+        minuteCombo.setFont(BODY);
+        timePanel.add(minuteCombo);
+
+        ampmCombo = new JComboBox<>(new String[] { "AM", "PM" });
+        ampmCombo.setSelectedItem(LocalTime.now().getHour() >= 12 ? "PM" : "AM");
+        ampmCombo.setFont(BODY);
+        timePanel.add(ampmCombo);
+
+        leftPanel.add(timePanel);
+        y += 60;
+
+        // Add Appointment button
+        addAppointmentBtn = createRoundedBlueButton("Schedule Appointment");
+        addAppointmentBtn.setBounds(120, y, 220, 40);
+        addAppointmentBtn.addActionListener(e -> requestAppointment());
+        leftPanel.add(addAppointmentBtn);
+
+        // Pre-fill client info if available
+        if (currentClient != null) {
+            nameField.setText(currentClient.getName());
+            contactField.setText(currentClient.getPhone());
+            emailField.setText(currentClient.getEmail());
+        }
+    }
+
+    private void createRightPanel() {
+        // Scheduled Appointment title
+        JLabel titleLabel = new JLabel("Scheduled Appointments");
+        titleLabel.setBounds(520, 120, 300, 30);
+        titleLabel.setFont(H2);
+        titleLabel.setForeground(TEXT_PRIMARY);
+        add(titleLabel);
+
+        // Main appointments container with proper scroll pane
+        JPanel rightContainer = new JPanel();
+        rightContainer.setBounds(520, 160, 760, 300);
+        rightContainer.setLayout(new BorderLayout());
+        rightContainer.setOpaque(false);
+        rightContainer.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        add(rightContainer);
+
+        // Appointments list panel
+        appointmentsListPanel = new JPanel();
+        appointmentsListPanel.setLayout(new BoxLayout(appointmentsListPanel, BoxLayout.Y_AXIS));
+        appointmentsListPanel.setOpaque(false);
+        appointmentsListPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+        // Scroll pane with proper configuration
+        JScrollPane scrollPane = new JScrollPane(appointmentsListPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.getViewport().setBackground(new Color(240, 248, 247));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        rightContainer.add(scrollPane, BorderLayout.CENTER);
+
+        // Arrows panel (positioned absolutely over the scroll pane)
+        arrowsPanel = new JPanel(null);
+        arrowsPanel.setBounds(520, 160, 760, 300);
+        arrowsPanel.setOpaque(false);
+        add(arrowsPanel);
+    }
+
+    private void createTimelinePanel() {
+        JPanel timelineContainer = new JPanel(new BorderLayout());
+        timelineContainer.setBounds(520, 480, 760, 180);
+        timelineContainer.setOpaque(false);
+        timelineContainer.setBorder(new EmptyBorder(10, 0, 10, 0));
+        add(timelineContainer);
+
+        JLabel timelineTitle = new JLabel("Upcoming Timeline");
+        timelineTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        timelineTitle.setBorder(new EmptyBorder(0, 0, 10, 0));
+        timelineContainer.add(timelineTitle, BorderLayout.NORTH);
+
+        timelinePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
+        timelinePanel.setOpaque(false);
+        timelinePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        JScrollPane timelineScroll = new JScrollPane(timelinePanel);
+        timelineScroll.setBorder(null);
+        timelineScroll.setOpaque(false);
+        timelineScroll.getViewport().setOpaque(false);
+        timelineScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        timelineScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+
+        timelineContainer.add(timelineScroll, BorderLayout.CENTER);
+    }
+
+    private JButton createRoundedBlueButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(BODY_BOLD);
+        b.setBackground(BTN_BLUE);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorder(new EmptyBorder(10, 20, 10, 20));
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                b.setBackground(BTN_BLUE.darker());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                b.setBackground(BTN_BLUE);
+            }
+        });
+        return b;
+    }
+
+    private JButton createRoundedRedButton(String text) {
+        JButton b = new JButton(text);
+        b.setFont(BODY_BOLD);
+        b.setBackground(DANGER_RED);
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setBorder(new EmptyBorder(10, 20, 10, 20));
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        b.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                b.setBackground(DANGER_RED.darker());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                b.setBackground(DANGER_RED);
+            }
+        });
+        return b;
     }
 
     private void loadClientAppointments() {
         appointmentList.clear();
-
-        // Get appointments for this client from DataManager
+        if (currentClient == null)
+            return;
         List<Appointment> clientAppointments = dataManager.getClientAppointments(currentClient.getEmail());
-        appointmentList.addAll(clientAppointments);
+        if (clientAppointments != null) {
+            appointmentList.addAll(clientAppointments);
+        }
         displayedList = new LinkedList<>(appointmentList);
+        statusLabel.setText("Loaded " + appointmentList.size() + " appointment(s)");
     }
 
-    private JPanel createHeaderPanel(int width) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG_LIGHT);
-        panel.setBorder(new EmptyBorder(20, 30, 0, 30));
-        panel.setPreferredSize(new Dimension(width, 80));
+    private void refreshAppointments() {
+        appointmentsListPanel.removeAll();
+        arrowsPanel.removeAll();
+        timelinePanel.removeAll();
 
-        // Title with icon
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        titlePanel.setBackground(BG_LIGHT);
+        // Sort appointments by date/time
+        displayedList.sort((a, b) -> a.getDateTime().compareTo(b.getDateTime()));
 
-        JLabel iconLabel = new JLabel("📅");
-        iconLabel.setFont(new Font("Segoe UI", Font.PLAIN, 32));
-        iconLabel.setBorder(new EmptyBorder(0, 0, 0, 15));
+        if (displayedList.isEmpty()) {
+            JLabel none = new JLabel("No scheduled appointments found");
+            none.setFont(BODY);
+            none.setForeground(TEXT_PRIMARY);
+            none.setAlignmentX(Component.CENTER_ALIGNMENT);
+            none.setBorder(new EmptyBorder(50, 0, 0, 0));
+            appointmentsListPanel.add(none);
+        } else {
+            for (int i = 0; i < displayedList.size(); i++) {
+                Appointment appt = displayedList.get(i);
+                JPanel card = createAppointmentCard(appt);
+                appointmentsListPanel.add(card);
+                appointmentsListPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JLabel titleLabel = new JLabel("My Appointments");
-        titleLabel.setFont(FONT_H1);
-        titleLabel.setForeground(TEXT_PRIMARY);
-
-        titlePanel.add(iconLabel);
-        titlePanel.add(titleLabel);
-
-        // Search panel - fixed width
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setBackground(BG_LIGHT);
-        searchPanel.setPreferredSize(new Dimension(400, 50));
-
-        // Modern search field with icon
-        JPanel searchContainer = new JPanel(new BorderLayout());
-        searchContainer.setBackground(CARD_WHITE);
-        searchContainer.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER, 1),
-                new EmptyBorder(0, 15, 0, 0)));
-
-        searchField = new JTextField();
-        searchField.setFont(FONT_BODY);
-        searchField.setBorder(null);
-        searchField.setBackground(CARD_WHITE);
-        searchField.setForeground(TEXT_PRIMARY);
-        searchField.putClientProperty("JTextField.placeholderText", "Search appointments by name...");
-
-        // Search icon
-        JLabel searchIcon = new JLabel("🔍");
-        searchIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchIcon.setBorder(new EmptyBorder(0, 0, 0, 15));
-        searchIcon.setForeground(TEXT_SECONDARY);
-
-        searchContainer.add(searchField, BorderLayout.CENTER);
-        searchContainer.add(searchIcon, BorderLayout.EAST);
-
-        // Search button with modern styling
-        JButton searchBtn = new JButton("Search");
-        searchBtn.setFont(FONT_BTN);
-        searchBtn.setBackground(PRIMARY);
-        searchBtn.setForeground(Color.WHITE);
-        searchBtn.setFocusPainted(false);
-        searchBtn.setBorderPainted(false);
-        searchBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        searchBtn.setBorder(new EmptyBorder(10, 24, 10, 24));
-        searchBtn.setPreferredSize(new Dimension(100, 50));
-        searchBtn.addActionListener(e -> searchAppointment());
-
-        // Add hover effect
-        searchBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                searchBtn.setBackground(PRIMARY_DARK);
-            }
-
-            public void mouseExited(MouseEvent e) {
-                searchBtn.setBackground(PRIMARY);
-            }
-        });
-
-        // Add Enter key listener
-        searchField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    searchAppointment();
+                // Add arrow after each card except the last one
+                if (i < displayedList.size() - 1) {
+                    int arrowY = 10 + i * 80;
+                    JLabel arrow = new JLabel("↓");
+                    arrow.setBounds(370, arrowY, 20, 20);
+                    arrow.setFont(new Font("Segoe UI", Font.BOLD, 20));
+                    arrow.setForeground(ARROW_COLOR);
+                    arrow.setHorizontalAlignment(SwingConstants.CENTER);
+                    arrowsPanel.add(arrow);
                 }
-            }
-        });
-
-        JPanel searchWrapper = new JPanel(new BorderLayout(10, 0));
-        searchWrapper.setBackground(BG_LIGHT);
-        searchWrapper.add(searchContainer, BorderLayout.CENTER);
-        searchWrapper.add(searchBtn, BorderLayout.EAST);
-
-        searchPanel.add(searchWrapper, BorderLayout.CENTER);
-
-        panel.add(titlePanel, BorderLayout.WEST);
-        panel.add(searchPanel, BorderLayout.EAST);
-
-        return panel;
-    }
-
-    private JPanel createTablePanel(int width) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG_LIGHT);
-        panel.setBorder(new EmptyBorder(0, 30, 0, 30));
-        panel.setPreferredSize(new Dimension(width, 320));
-
-        // Table header with stats
-        JPanel tableHeader = new JPanel(new BorderLayout());
-        tableHeader.setBackground(CARD_WHITE);
-        tableHeader.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER, 1),
-                new EmptyBorder(15, 20, 15, 20)));
-
-        JLabel tableTitle = new JLabel("Appointments List");
-        tableTitle.setFont(FONT_H2);
-        tableTitle.setForeground(TEXT_PRIMARY);
-
-        JLabel statsLabel = new JLabel("Total: " + appointmentList.size() + " appointments");
-        statsLabel.setFont(FONT_SMALL);
-        statsLabel.setForeground(TEXT_SECONDARY);
-
-        tableHeader.add(tableTitle, BorderLayout.WEST);
-        tableHeader.add(statsLabel, BorderLayout.EAST);
-
-        // Table setup with fixed height
-        String[] cols = { "Client Name", "Phone", "Service", "Date & Time", "Status" };
-        tableModel = new DefaultTableModel(cols, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        table = new JTable(tableModel);
-        styleModernTable(table);
-
-        // Set preferred column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(150); // Name
-        table.getColumnModel().getColumn(1).setPreferredWidth(120); // Phone
-        table.getColumnModel().getColumn(2).setPreferredWidth(180); // Service
-        table.getColumnModel().getColumn(3).setPreferredWidth(150); // Date & Time
-        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Status
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(width - 60, 200));
-        scrollPane.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 1, 1, 1, BORDER),
-                BorderFactory.createEmptyBorder()));
-        scrollPane.getViewport().setBackground(CARD_WHITE);
-
-        panel.add(tableHeader, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createFormPanel(int width) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG_LIGHT);
-        panel.setBorder(new EmptyBorder(20, 30, 30, 30));
-
-        // Form header
-        JPanel formHeader = new JPanel(new BorderLayout());
-        formHeader.setBackground(CARD_WHITE);
-        formHeader.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER, 1),
-                new EmptyBorder(15, 20, 15, 20)));
-
-        JLabel formTitle = new JLabel("Appointment Details");
-        formTitle.setFont(FONT_H2);
-        formTitle.setForeground(TEXT_PRIMARY);
-
-        JLabel formSubtitle = new JLabel("Fill in the details to request an appointment");
-        formSubtitle.setFont(FONT_SMALL);
-        formSubtitle.setForeground(TEXT_SECONDARY);
-
-        JPanel titlePanel = new JPanel(new GridLayout(2, 1, 0, 5));
-        titlePanel.setBackground(CARD_WHITE);
-        titlePanel.add(formTitle);
-        titlePanel.add(formSubtitle);
-
-        formHeader.add(titlePanel, BorderLayout.WEST);
-
-        // Main form content
-        JPanel formContent = new JPanel(new GridBagLayout());
-        formContent.setBackground(CARD_WHITE);
-        formContent.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 1, 1, 1, BORDER),
-                new EmptyBorder(30, 30, 30, 30)));
-        formContent.setPreferredSize(new Dimension(width - 60, 250));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
-
-        // Row 1: Name and Phone - Pre-filled with client info
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.5;
-        addFormLabel(formContent, "Client Name *", gbc);
-
-        gbc.gridx = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        nameField = createModernTextField(currentClient.getName());
-        nameField.setEditable(false); // Can't change name
-        formContent.add(nameField, gbc);
-
-        gbc.gridx = 2;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.5;
-        addFormLabel(formContent, "Phone Number *", gbc);
-
-        gbc.gridx = 3;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        contactField = createModernTextField(currentClient.getPhone());
-        contactField.setEditable(false); // Can't change phone
-        formContent.add(contactField, gbc);
-
-        // Row 2: Service and Date
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.5;
-        addFormLabel(formContent, "Service *", gbc);
-
-        gbc.gridx = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        serviceField = createModernTextField("Select or enter service name");
-        formContent.add(serviceField, gbc);
-
-        gbc.gridx = 2;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.5;
-        addFormLabel(formContent, "Date *", gbc);
-
-        gbc.gridx = 3;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        dateField = createModernTextField("YYYY-MM-DD (e.g., 2024-12-25)");
-        formContent.add(dateField, gbc);
-
-        // Row 3: Time
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.5;
-        addFormLabel(formContent, "Time *", gbc);
-
-        gbc.gridx = 1;
-        gbc.gridwidth = 1;
-        gbc.weightx = 1.0;
-        timeField = createModernTextField("HH:MM (24h format, e.g., 14:30)");
-        formContent.add(timeField, gbc);
-
-        // Action buttons - properly centered
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
-        buttonPanel.setBackground(CARD_WHITE);
-        buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
-
-        JButton clearBtn = createSecondaryButton("Clear Form");
-        clearBtn.addActionListener(e -> clearForm());
-
-        JButton cancelBtn = createDangerButton("Cancel Appointment");
-        cancelBtn.addActionListener(e -> deleteAppointment());
-
-        JButton bookBtn = createSuccessButton("Request Appointment");
-        bookBtn.addActionListener(e -> addAppointment());
-
-        buttonPanel.add(clearBtn);
-        buttonPanel.add(cancelBtn);
-        buttonPanel.add(bookBtn);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 4;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
-        formContent.add(buttonPanel, gbc);
-
-        panel.add(formHeader, BorderLayout.NORTH);
-        panel.add(formContent, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private void styleModernTable(JTable table) {
-        table.setFont(FONT_BODY);
-        table.setRowHeight(48);
-        table.setShowGrid(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(new Color(PRIMARY.getRed(), PRIMARY.getGreen(), PRIMARY.getBlue(), 30));
-        table.setSelectionForeground(TEXT_PRIMARY);
-
-        // Header styling
-        JTableHeader header = table.getTableHeader();
-        header.setFont(FONT_BODY_BOLD);
-        header.setBackground(new Color(248, 249, 250));
-        header.setForeground(TEXT_PRIMARY);
-        header.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(0, 0, 2, 0, PRIMARY),
-                new EmptyBorder(12, 16, 12, 16)));
-        header.setReorderingAllowed(false);
-
-        // Cell padding
-        DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value,
-                        isSelected, hasFocus, row, column);
-                label.setBorder(new EmptyBorder(12, 16, 12, 16));
-                label.setForeground(TEXT_PRIMARY);
-                return label;
-            }
-        };
-
-        for (int i = 0; i < table.getColumnCount(); i++) {
-            if (i != 4) { // Skip status column
-                table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
             }
         }
 
-        // Status column special styling with modern badge design
-        table.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                JLabel label = (JLabel) super.getTableCellRendererComponent(table, value,
-                        isSelected, hasFocus, row, column);
-                label.setHorizontalAlignment(CENTER);
-                label.setOpaque(false);
+        // Build timeline
+        buildTimeline();
 
-                String status = value != null ? value.toString().toUpperCase() : "PENDING";
-                Color bgColor;
-                Color textColor = Color.WHITE;
+        // Update UI
+        appointmentsListPanel.revalidate();
+        appointmentsListPanel.repaint();
+        arrowsPanel.revalidate();
+        arrowsPanel.repaint();
+        timelinePanel.revalidate();
+        timelinePanel.repaint();
 
-                switch (status) {
-                    case "CONFIRMED":
-                        bgColor = SUCCESS;
-                        break;
-                    case "CANCELLED":
-                        bgColor = DANGER;
-                        break;
-                    case "COMPLETED":
-                        bgColor = TEXT_SECONDARY;
-                        break;
-                    default:
-                        bgColor = WARNING;
-                        textColor = TEXT_PRIMARY;
-                }
-
-                // Create a modern badge
-                label.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(bgColor.darker(), 1),
-                        new EmptyBorder(6, 20, 6, 20)));
-                label.setBackground(bgColor);
-                label.setForeground(textColor);
-                label.setOpaque(true);
-
-                return label;
-            }
-        });
+        // Update button states
+        editBtn.setEnabled(selectedAppointment != null);
+        cancelBtn.setEnabled(selectedAppointment != null);
     }
 
-    private JTextField createModernTextField(String placeholder) {
-        JTextField field = new JTextField();
-        field.setFont(FONT_BODY);
-        field.setForeground(TEXT_PRIMARY);
-        field.setBackground(new Color(248, 249, 250));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(BORDER, 1),
-                new EmptyBorder(12, 15, 12, 15)));
-        field.putClientProperty("JTextField.placeholderText", placeholder);
+    private JPanel createAppointmentCard(Appointment appt) {
+        JPanel card = new JPanel(new BorderLayout(10, 0));
+        card.setBackground(WHITE);
+        card.setBorder(new CompoundBorder(
+                new LineBorder(appt.equals(selectedAppointment) ? PRIMARY : new Color(180, 180, 180),
+                        appt.equals(selectedAppointment) ? 2 : 1),
+                new EmptyBorder(10, 15, 10, 15)));
+        card.setMaximumSize(new Dimension(730, 70));
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Add hover effect
-        field.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (!field.hasFocus()) {
-                    field.setBackground(HOVER);
-                }
-            }
+        // Time section
+        JLabel timeLabel = new JLabel(appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a")));
+        timeLabel.setFont(BODY_BOLD);
+        timeLabel.setPreferredSize(new Dimension(100, 30));
+        card.add(timeLabel, BorderLayout.WEST);
 
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (!field.hasFocus()) {
-                    field.setBackground(new Color(248, 249, 250));
-                }
-            }
-        });
+        // Center section with name and date
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setOpaque(false);
 
-        field.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                field.setBackground(Color.WHITE);
-                field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(PRIMARY, 2),
-                        new EmptyBorder(11, 14, 11, 14)));
-            }
+        JLabel nameLabel = new JLabel(appt.getClient().getName());
+        nameLabel.setFont(BODY);
 
-            @Override
-            public void focusLost(FocusEvent e) {
-                field.setBackground(new Color(248, 249, 250));
-                field.setBorder(BorderFactory.createCompoundBorder(
-                        new LineBorder(BORDER, 1),
-                        new EmptyBorder(12, 15, 12, 15)));
+        JLabel dateLabel = new JLabel(appt.getDateTime().format(DateTimeFormatter.ofPattern("EEE, MMM d, yyyy")));
+        dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        dateLabel.setForeground(new Color(100, 100, 100));
+
+        centerPanel.add(nameLabel, BorderLayout.CENTER);
+        centerPanel.add(dateLabel, BorderLayout.SOUTH);
+        card.add(centerPanel, BorderLayout.CENTER);
+
+        // Right section with service and status
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setOpaque(false);
+
+        JLabel serviceLabel = new JLabel(appt.getService().getName());
+        serviceLabel.setFont(BODY_BOLD);
+        serviceLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        JLabel statusLabel = new JLabel("✓ Confirmed");
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        statusLabel.setForeground(new Color(40, 167, 69));
+        statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        rightPanel.add(serviceLabel, BorderLayout.CENTER);
+        rightPanel.add(statusLabel, BorderLayout.SOUTH);
+        card.add(rightPanel, BorderLayout.EAST);
+
+        // Click handler
+        card.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                selectedAppointment = appt;
+                populateFormWithAppointment(appt);
+                refreshAppointments();
             }
         });
 
-        return field;
+        return card;
     }
 
-    private void addFormLabel(JPanel parent, String text, GridBagConstraints gbc) {
-        JLabel label = new JLabel(text);
-        label.setFont(FONT_BODY_BOLD);
-        label.setForeground(TEXT_PRIMARY);
-        parent.add(label, gbc);
-    }
+    private void buildTimeline() {
+        List<Appointment> upcoming = new LinkedList<>(displayedList);
+        upcoming.sort((a, b) -> a.getDateTime().compareTo(b.getDateTime()));
+        int count = Math.min(3, upcoming.size());
 
-    private JButton createSuccessButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(FONT_BTN);
-        button.setBackground(SUCCESS);
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setBorder(new EmptyBorder(12, 30, 12, 30));
+        for (int i = 0; i < count; i++) {
+            Appointment a = upcoming.get(i);
+            JPanel box = createTimelineBox(a);
+            timelinePanel.add(box);
 
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(33, 136, 56));
-                button.setBorder(new EmptyBorder(12, 30, 12, 30));
+            if (i < count - 1) {
+                JLabel arrow = new JLabel("→");
+                arrow.setFont(new Font("Segoe UI", Font.BOLD, 24));
+                arrow.setForeground(ARROW_COLOR);
+                timelinePanel.add(arrow);
             }
-
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(SUCCESS);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton createDangerButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(FONT_BTN);
-        button.setBackground(DANGER);
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setBorder(new EmptyBorder(12, 30, 12, 30));
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(200, 35, 51));
-                button.setBorder(new EmptyBorder(12, 30, 12, 30));
-            }
-
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(DANGER);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton createSecondaryButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(FONT_BTN);
-        button.setBackground(new Color(108, 117, 125));
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setBorder(new EmptyBorder(12, 30, 12, 30));
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(90, 98, 104));
-                button.setBorder(new EmptyBorder(12, 30, 12, 30));
-            }
-
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(new Color(108, 117, 125));
-            }
-        });
-
-        return button;
-    }
-
-    private void refreshTable() {
-        tableModel.setRowCount(0);
-        for (Appointment appt : displayedList) {
-            String status = appt.isConfirmed() ? "Confirmed" : "Pending";
-            tableModel.addRow(new Object[] {
-                    appt.getClient().getName(),
-                    appt.getClient().getPhone(),
-                    appt.getService().getName(),
-                    appt.getDateTime().format(formatter),
-                    status
-            });
         }
+    }
+
+    private JPanel createTimelineBox(Appointment a) {
+        JPanel box = new JPanel(new BorderLayout());
+        box.setPreferredSize(new Dimension(140, 100));
+        box.setBackground(BLUE_CARD);
+        box.setBorder(new CompoundBorder(
+                new LineBorder(BLUE_CARD.darker(), 1),
+                new EmptyBorder(10, 10, 10, 10)));
+
+        JLabel timeLabel = new JLabel(a.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a")));
+        timeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        timeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        box.add(timeLabel, BorderLayout.NORTH);
+
+        JLabel nameLabel = new JLabel("<html><center>" + a.getClient().getName() + "</center></html>");
+        nameLabel.setFont(BODY);
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        box.add(nameLabel, BorderLayout.CENTER);
+
+        JLabel serviceLabel = new JLabel("<html><center>" + a.getService().getName() + "</center></html>");
+        serviceLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        serviceLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        box.add(serviceLabel, BorderLayout.SOUTH);
+
+        return box;
     }
 
     private void populateFormWithAppointment(Appointment appt) {
@@ -630,171 +557,328 @@ public class AppointmentsPanel extends JPanel {
 
         nameField.setText(appt.getClient().getName());
         contactField.setText(appt.getClient().getPhone());
-        serviceField.setText(appt.getService().getName());
-        dateField.setText(appt.getDateTime().toLocalDate().toString());
-        timeField.setText(appt.getDateTime().toLocalTime().toString());
+        emailField.setText(appt.getClient().getEmail());
+        serviceCombo.setSelectedItem(appt.getService().getName());
+
+        dateField.setValue(java.sql.Date.valueOf(appt.getDateTime().toLocalDate()));
+
+        LocalTime time = appt.getDateTime().toLocalTime();
+        int hour = time.getHour();
+        String ampm = "AM";
+        if (hour >= 12) {
+            ampm = "PM";
+            if (hour > 12)
+                hour -= 12;
+        }
+        if (hour == 0)
+            hour = 12;
+
+        hourCombo.setSelectedItem(String.format("%02d", hour));
+        minuteCombo.setSelectedItem(String.format("%02d", (time.getMinute() / 5) * 5));
+        ampmCombo.setSelectedItem(ampm);
+
+        statusLabel.setText("Selected: " + appt.getService().getName() + " at " +
+                appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a, MMM d")));
     }
 
     private void clearForm() {
-        nameField.setText(currentClient.getName());
-        contactField.setText(currentClient.getPhone());
-        serviceField.setText("");
-        dateField.setText("");
-        timeField.setText("");
+        serviceCombo.setSelectedIndex(0);
+        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
+        hourCombo.setSelectedItem(String.format("%02d",
+                LocalTime.now().getHour() % 12 == 0 ? 12 : LocalTime.now().getHour() % 12));
+        minuteCombo.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5));
+        ampmCombo.setSelectedItem(LocalTime.now().getHour() >= 12 ? "PM" : "AM");
 
+        statusLabel.setText("Ready");
         selectedAppointment = null;
-        table.clearSelection();
+        editBtn.setEnabled(false);
+        cancelBtn.setEnabled(false);
     }
 
-    private void addAppointment() {
+    private void requestAppointment() {
         try {
-            String serviceName = serviceField.getText().trim();
-            String date = dateField.getText().trim();
-            String time = timeField.getText().trim();
-
-            if (serviceName.isEmpty() || date.isEmpty() || time.isEmpty()) {
-                showStyledDialog("Warning", "Please fill all required fields (*)",
+            String serviceName = (String) serviceCombo.getSelectedItem();
+            if (serviceName == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a service",
+                        "Missing Information",
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            if (!validateDateTime(date, time)) {
+            // Parse date and time
+            java.util.Date dateValue = (java.util.Date) dateField.getValue();
+            if (dateValue == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a valid date",
+                        "Missing Information",
+                        JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            LocalDateTime dt = LocalDateTime.parse(date + " " + time, formatter);
+            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
 
-            // Get service from DataManager
+            String hourStr = (String) hourCombo.getSelectedItem();
+            String minuteStr = (String) minuteCombo.getSelectedItem();
+            String ampm = (String) ampmCombo.getSelectedItem();
+
+            int hour = Integer.parseInt(hourStr);
+            if (ampm.equals("PM") && hour != 12) {
+                hour += 12;
+            } else if (ampm.equals("AM") && hour == 12) {
+                hour = 0;
+            }
+
+            LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
+            LocalDateTime dt = LocalDateTime.of(date, time);
+
+            // Validate date/time
+            if (dt.isBefore(LocalDateTime.now())) {
+                JOptionPane.showMessageDialog(this,
+                        "Cannot schedule appointment in the past",
+                        "Invalid Time",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (time.isBefore(LocalTime.of(8, 0)) || time.isAfter(LocalTime.of(20, 0))) {
+                JOptionPane.showMessageDialog(this,
+                        "Business hours are 8:00 AM to 8:00 PM",
+                        "Outside Business Hours",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Check for time slot availability
+            if (isTimeSlotBooked(dt)) {
+                JOptionPane.showMessageDialog(this,
+                        "This time slot is already booked. Please choose another time.",
+                        "Time Not Available",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Get or create service
             ServiceItem service = dataManager.getServiceByName(serviceName);
             if (service == null) {
-                // Create new service if not found
                 service = new ServiceItem(serviceName, 0.0);
                 dataManager.services.add(service);
             }
 
-            // Create appointment - NOT CONFIRMED (pending staff approval)
-            Appointment a = new Appointment(
-                    UUID.randomUUID().toString(),
-                    currentClient,
-                    service,
-                    dt);
-            a.setConfirmed(false); // Start as pending
+            // Create and add appointment
+            Appointment appt = new Appointment(UUID.randomUUID().toString(), currentClient, service, dt);
+            appt.setConfirmed(true); // Directly confirmed (no pending requests)
+            dataManager.appointments.addSorted(appt);
 
-            // Add to DataManager
-            dataManager.appointments.addSorted(a);
-
-            // Refresh local list
             loadClientAppointments();
-            refreshTable();
+            refreshAppointments();
             clearForm();
 
-            showStyledDialog("Success",
-                    "Appointment request submitted!\n" +
-                            "Date: " + dt.toLocalDate() + "\n" +
-                            "Time: " + dt.toLocalTime() + "\n" +
-                            "Service: " + serviceName + "\n\n" +
-                            "Status: Pending - Waiting for staff confirmation.",
+            JOptionPane.showMessageDialog(this,
+                    "Appointment scheduled successfully!",
+                    "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception ex) {
-            showStyledDialog("Error",
-                    "Invalid date/time format!<br>Date: YYYY-MM-DD (e.g., 2024-12-25)<br>Time: HH:mm (e.g., 14:30)",
+            JOptionPane.showMessageDialog(this,
+                    "An error occurred: " + ex.getMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 
-    private void deleteAppointment() {
+    private boolean isTimeSlotBooked(LocalDateTime dt) {
+        for (Appointment existing : dataManager.getAppointmentsList()) {
+            if (existing.getDateTime().equals(dt)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void deleteSelectedAppointment() {
         if (selectedAppointment == null) {
-            showStyledDialog("Warning", "Please select an appointment to cancel",
+            JOptionPane.showMessageDialog(this,
+                    "Please select an appointment to cancel first",
+                    "No Selection",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "<html><div style='width:300px;padding:10px;'>" +
-                        "<h3 style='margin-top:0;color:#dc3545;'>Confirm Cancellation</h3>" +
-                        "<p>Are you sure you want to cancel this appointment?</p>" +
-                        "<div style='background:#f8f9fa;padding:10px;border-radius:5px;margin:10px 0;'>" +
-                        "<b>Client:</b> " + selectedAppointment.getClient().getName() + "<br>" +
-                        "<b>Service:</b> " + selectedAppointment.getService().getName() + "<br>" +
-                        "<b>Time:</b> " + selectedAppointment.getDateTime().format(formatter) + "</div>" +
-                        "<p><i>This action cannot be undone.</i></p>" +
-                        "</div></html>",
-                "Confirm Cancellation",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        // Ask for cancellation reason
+        String reason = JOptionPane.showInputDialog(this,
+                "Please provide a reason for cancellation (optional):",
+                "Cancellation Reason",
+                JOptionPane.QUESTION_MESSAGE);
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            // Remove from DataManager
-            dataManager.appointments.removeById(selectedAppointment.getId());
+        if (reason == null)
+            return; // User cancelled
 
-            // Refresh local list
+        // Create cancellation request
+        CancellationRequest cancellation = new CancellationRequest(
+                UUID.randomUUID().toString(),
+                selectedAppointment.getId(),
+                currentClient,
+                selectedAppointment.getService(),
+                selectedAppointment.getDateTime(),
+                reason.isEmpty() ? "No reason provided" : reason);
+
+        dataManager.addCancellationRequest(cancellation);
+
+        selectedAppointment = null;
+        loadClientAppointments();
+        refreshAppointments();
+        clearForm();
+
+        JOptionPane.showMessageDialog(this,
+                "Cancellation request submitted. Please wait for staff confirmation.",
+                "Cancellation Requested",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void editSelectedAppointment() {
+        if (selectedAppointment == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an appointment to edit first",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            String serviceName = (String) serviceCombo.getSelectedItem();
+            if (serviceName == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a service",
+                        "Missing Information",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Parse date and time
+            java.util.Date dateValue = (java.util.Date) dateField.getValue();
+            if (dateValue == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a valid date",
+                        "Missing Information",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+
+            String hourStr = (String) hourCombo.getSelectedItem();
+            String minuteStr = (String) minuteCombo.getSelectedItem();
+            String ampm = (String) ampmCombo.getSelectedItem();
+
+            int hour = Integer.parseInt(hourStr);
+            if (ampm.equals("PM") && hour != 12) {
+                hour += 12;
+            } else if (ampm.equals("AM") && hour == 12) {
+                hour = 0;
+            }
+
+            LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
+            LocalDateTime newDateTime = LocalDateTime.of(date, time);
+
+            // Validate date/time
+            if (newDateTime.isBefore(LocalDateTime.now())) {
+                JOptionPane.showMessageDialog(this,
+                        "Cannot schedule appointment in the past",
+                        "Invalid Time",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (time.isBefore(LocalTime.of(8, 0)) || time.isAfter(LocalTime.of(20, 0))) {
+                JOptionPane.showMessageDialog(this,
+                        "Business hours are 8:00 AM to 8:00 PM",
+                        "Outside Business Hours",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Check for time slot availability (excluding the appointment being edited)
+            for (Appointment existing : dataManager.getAppointmentsList()) {
+                if (!existing.getId().equals(selectedAppointment.getId()) &&
+                        existing.getDateTime().equals(newDateTime)) {
+                    JOptionPane.showMessageDialog(this,
+                            "This time slot is already booked. Please choose another time.",
+                            "Time Not Available",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
+            // Get service
+            ServiceItem service = dataManager.getServiceByName(serviceName);
+            if (service == null) {
+                service = new ServiceItem(serviceName, 0.0);
+                dataManager.services.add(service);
+            }
+
+            // Update appointment
+            selectedAppointment.setService(service);
+            selectedAppointment.setDateTime(newDateTime);
+
             loadClientAppointments();
-            refreshTable();
-            clearForm();
+            refreshAppointments();
 
-            showStyledDialog("Success", "Appointment cancelled successfully!",
+            JOptionPane.showMessageDialog(this,
+                    "Appointment updated successfully!",
+                    "Success",
                     JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "An error occurred: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 
     private void searchAppointment() {
-        String query = searchField.getText().trim();
+        String query = searchField.getText().trim().toLowerCase();
 
         if (query.isEmpty()) {
             displayedList = new LinkedList<>(appointmentList);
-            refreshTable();
-            return;
-        }
-
-        List<Appointment> results = new LinkedList<>();
-        for (Appointment a : appointmentList) {
-            if (a.getClient().getName().toLowerCase().contains(query.toLowerCase()) ||
-                    a.getService().getName().toLowerCase().contains(query.toLowerCase())) {
-                results.add(a);
+        } else {
+            displayedList = new LinkedList<>();
+            for (Appointment appt : appointmentList) {
+                if (appt.getService().getName().toLowerCase().contains(query) ||
+                        appt.getClient().getName().toLowerCase().contains(query) ||
+                        appt.getDateTime().toString().toLowerCase().contains(query)) {
+                    displayedList.add(appt);
+                }
             }
         }
 
-        displayedList = results;
-        refreshTable();
-
-        if (results.isEmpty() && !query.isEmpty()) {
-            showStyledDialog("Information", "No appointments found for: " + query,
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
+        refreshAppointments();
+        statusLabel.setText("Found " + displayedList.size() + " appointment(s) matching '" + query + "'");
     }
 
-    private boolean validateDateTime(String dateStr, String timeStr) {
-        try {
-            LocalDate date = LocalDate.parse(dateStr);
-            LocalTime time = LocalTime.parse(timeStr);
+    private static class RoundedPanel extends JPanel {
+        private final int radius;
+        private final Color background;
 
-            if (date.isBefore(LocalDate.now())) {
-                showStyledDialog("Warning", "Date cannot be in the past!",
-                        JOptionPane.WARNING_MESSAGE);
-                return false;
-            }
-
-            if (time.isBefore(LocalTime.of(8, 0)) || time.isAfter(LocalTime.of(20, 0))) {
-                showStyledDialog("Warning", "Time must be between 08:00 and 20:00",
-                        JOptionPane.WARNING_MESSAGE);
-                return false;
-            }
-
-            return true;
-
-        } catch (Exception e) {
-            showStyledDialog("Error", "Invalid date/time format!<br>Date: YYYY-MM-DD<br>Time: HH:mm",
-                    JOptionPane.ERROR_MESSAGE);
-            return false;
+        RoundedPanel(int radius, Color bg) {
+            this.radius = radius;
+            this.background = bg;
+            setOpaque(false);
         }
-    }
 
-    private void showStyledDialog(String title, String message, int messageType) {
-        JOptionPane.showMessageDialog(this,
-                "<html><div style='width:300px;padding:10px;font-family:Segoe UI;'>" +
-                        message.replace("\n", "<br>") +
-                        "</div></html>",
-                title,
-                messageType);
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(background);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.setColor(new Color(220, 220, 220));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }
