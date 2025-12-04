@@ -159,10 +159,11 @@ public class LoginFrame extends JFrame {
                 String emailOrPhone = emailPhoneField.getText().trim();
                 String password = new String(passwordField.getPassword());
 
-                if (emailOrPhone.equals("user@saloncare.com") && password.equals("1234")) {
+                if (emailOrPhone.equals("jiellyAbao@gmail.com") && password.equals("password123")) {
                     feedbackLabel.setText("Login Successful! Redirecting...");
                     feedbackLabel.setForeground(new Color(34, 139, 34));
-
+                    new ClientDashboardFrame().setVisible(true);
+                    dispose();
                 } else {
                     feedbackLabel.setText("Invalid credentials. Please try again.");
                     feedbackLabel.setForeground(Color.RED);

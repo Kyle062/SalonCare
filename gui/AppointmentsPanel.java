@@ -90,7 +90,6 @@ public class AppointmentsPanel extends JPanel {
         setLayout(new BorderLayout());
         add(scrollPane, BorderLayout.CENTER);
 
-       
         displayedList = new LinkedList<>(appointmentList);
         refreshTable();
 
@@ -621,8 +620,6 @@ public class AppointmentsPanel extends JPanel {
 
         return button;
     }
-
-    
 
     private void refreshTable() {
         tableModel.setRowCount(0);

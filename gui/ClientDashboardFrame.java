@@ -264,6 +264,7 @@ public class ClientDashboardFrame extends JFrame {
         });
 
         logoutBtn.addActionListener(e -> {
+            new LoginFrame().setVisible(true);
             dispose();
         });
     }
