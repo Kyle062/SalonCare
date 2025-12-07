@@ -26,15 +26,13 @@ public class ClientDashboardFrame extends JFrame {
             setLayout(new GridBagLayout());
             setBackground(Color.WHITE);
             setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230), 1));
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR)); // Changed from HAND_CURSOR to DEFAULT
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(0, 0, 0, 0);
 
-            // 1. Service Image - Using placeholder or actual image
+            // 1. Service Image
             JLabel serviceImage = new JLabel();
-            // You can load actual images based on service name
-            // For now, using a placeholder
             serviceImage.setOpaque(true);
             serviceImage.setBackground(new Color(240, 240, 240));
             serviceImage.setPreferredSize(new Dimension(CARD_PREF_WIDTH, IMAGE_HEIGHT));
@@ -70,13 +68,9 @@ public class ClientDashboardFrame extends JFrame {
             priceLabel.setHorizontalAlignment(SwingConstants.LEFT);
             gbc.gridx = 0;
             gbc.gridy = 2;
-            gbc.gridwidth = 2; // Changed from 1 to 2 to span full width
-            gbc.insets = new Insets(0, 15, 15, 15); // Adjusted insets
+            gbc.gridwidth = 2;
+            gbc.insets = new Insets(0, 15, 15, 15);
             add(priceLabel, gbc);
-
-            // REMOVED: Book Now button section
-
-            // REMOVED: Hover effect (since no more interactive elements)
         }
     }
 
@@ -125,20 +119,15 @@ public class ClientDashboardFrame extends JFrame {
         final int FRAME_WIDTH = getWidth();
         final int FRAME_HEIGHT = getHeight();
 
-        // --- PROPORTIONAL DIMENSIONS ---
-        final int LEFT_PANEL_WIDTH = (int) (FRAME_WIDTH * 0.18);
-        final int RIGHT_PANEL_WIDTH = FRAME_WIDTH - LEFT_PANEL_WIDTH;
-        final int TOP_BAR_HEIGHT = (int) (FRAME_HEIGHT * 0.12);
-
         // --- LEFT PANEL (Navigation/Sidebar) ---
         JPanel leftJPanel = new JPanel();
-        leftJPanel.setBounds(0, 0, LEFT_PANEL_WIDTH, FRAME_HEIGHT);
+        leftJPanel.setBounds(0, 0, 345, FRAME_HEIGHT);
         leftJPanel.setBackground(lightMintTeal);
         leftJPanel.setLayout(null);
 
         // Logo/Brand area
         JPanel logoArea = new JPanel();
-        logoArea.setBounds((LEFT_PANEL_WIDTH / 2) - 60, 40, 120, 120);
+        logoArea.setBounds(112, 40, 120, 120);
         logoArea.setBackground(mintTeal);
         logoArea.setLayout(new GridBagLayout());
         logoArea.setBorder(BorderFactory.createLineBorder(Color.WHITE, 5));
@@ -154,18 +143,13 @@ public class ClientDashboardFrame extends JFrame {
         logoText.setFont(new Font("Times New Roman", Font.ITALIC | Font.BOLD, 28));
         logoText.setForeground(darkGrayText);
         logoText.setHorizontalAlignment(SwingConstants.CENTER);
-        logoText.setBounds(0, logoArea.getY() + logoArea.getHeight() + 10, LEFT_PANEL_WIDTH, 40);
+        logoText.setBounds(0, 170, 345, 40);
         leftJPanel.add(logoText);
 
         // Navigation Buttons
-        int buttonYStart = (int) (FRAME_HEIGHT * 0.35);
-        int buttonWidth = (int) (LEFT_PANEL_WIDTH * 0.7);
-        int buttonHeight = (int) (FRAME_HEIGHT * 0.05);
-        int buttonX = (LEFT_PANEL_WIDTH - buttonWidth) / 2;
-
         servicesBtn = new JButton("Home");
         servicesBtn.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        servicesBtn.setBounds(buttonX, buttonYStart, buttonWidth, buttonHeight);
+        servicesBtn.setBounds(51, 430, 242, 50);
         servicesBtn.setBackground(mintTeal);
         servicesBtn.setForeground(Color.WHITE);
         servicesBtn.setFocusPainted(false);
@@ -175,7 +159,7 @@ public class ClientDashboardFrame extends JFrame {
 
         myAppointmentsBtn = new JButton("My Appointments");
         myAppointmentsBtn.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        myAppointmentsBtn.setBounds(buttonX, buttonYStart + buttonHeight + 15, buttonWidth, buttonHeight);
+        myAppointmentsBtn.setBounds(51, 495, 242, 50);
         myAppointmentsBtn.setBackground(new Color(0, 0, 0, 0));
         myAppointmentsBtn.setForeground(darkGrayText);
         myAppointmentsBtn.setFocusPainted(false);
@@ -188,7 +172,7 @@ public class ClientDashboardFrame extends JFrame {
         logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 18));
         logoutBtn.setBackground(softRed);
         logoutBtn.setForeground(Color.WHITE);
-        logoutBtn.setBounds(buttonX, FRAME_HEIGHT - (int) (FRAME_HEIGHT * 0.15), buttonWidth, buttonHeight);
+        logoutBtn.setBounds(51, 900, 242, 50);
         logoutBtn.setFocusPainted(false);
         logoutBtn.setBorderPainted(false);
         logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -198,13 +182,13 @@ public class ClientDashboardFrame extends JFrame {
 
         // --- RIGHT PANEL (Main Content Area) ---
         rightJPanel = new JPanel();
-        rightJPanel.setBounds(LEFT_PANEL_WIDTH, 0, RIGHT_PANEL_WIDTH, FRAME_HEIGHT);
+        rightJPanel.setBounds(345, 0, 1595, FRAME_HEIGHT);
         rightJPanel.setBackground(Color.WHITE);
         rightJPanel.setLayout(null);
         add(rightJPanel);
 
         // Initialize services view components
-        initializeServicesView(RIGHT_PANEL_WIDTH, TOP_BAR_HEIGHT);
+        initializeServicesView();
 
         // Show initial services view
         showServicesView();
@@ -218,7 +202,7 @@ public class ClientDashboardFrame extends JFrame {
 
         myAppointmentsBtn.addActionListener(e -> {
             if (currentView != ViewState.APPOINTMENTS) {
-                showAppointmentsView(RIGHT_PANEL_WIDTH, FRAME_HEIGHT);
+                showAppointmentsView();
             }
         });
 
@@ -228,22 +212,18 @@ public class ClientDashboardFrame extends JFrame {
         });
     }
 
-    private void initializeServicesView(int rightPanelWidth, int topBarHeight) {
+    private void initializeServicesView() {
         // "Our Services" Title
         servicesTitle = new JLabel("Our Services");
         servicesTitle.setFont(new Font("Segoe UI", Font.BOLD, 36));
         servicesTitle.setForeground(darkGrayText);
-        servicesTitle.setBounds((int) (rightPanelWidth * 0.04), (int) (topBarHeight * 0.3),
-                (int) (rightPanelWidth * 0.3), (int) (topBarHeight * 0.4));
+        servicesTitle.setBounds(63, 115, 478, 160);
 
         // Search Bar
-        int searchWidth = (int) (rightPanelWidth * 0.25);
-        int searchHeight = (int) (topBarHeight * 0.4);
         searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         searchField.setForeground(Color.GRAY.darker());
-        searchField.setBounds(rightPanelWidth - searchWidth - (int) (rightPanelWidth * 0.1),
-                (int) (topBarHeight * 0.35), searchWidth, searchHeight);
+        searchField.setBounds(1235, 115, 398, 50);
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(lightGrayBorder, 1, true),
                 BorderFactory.createEmptyBorder(5, 15, 5, 15)));
@@ -259,15 +239,11 @@ public class ClientDashboardFrame extends JFrame {
         searchBtn.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(lightGrayBorder, 1, true),
                 BorderFactory.createEmptyBorder(6, 14, 6, 14)));
-        searchBtn.setBounds(searchField.getX() + searchField.getWidth() + 10,
-                searchField.getY(), 100, searchHeight);
+        searchBtn.setBounds(1348, 115, 100, 50);
         searchBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         Color normalBg = mintTeal;
-        Color hoverBg = new Color(
-                Math.max(0, mintTeal.getRed() - 10),
-                Math.max(0, mintTeal.getGreen() - 12),
-                Math.max(0, mintTeal.getBlue() - 10));
+        Color hoverBg = new Color(118, 197, 182);
 
         searchBtn.addMouseListener(new MouseAdapter() {
             @Override
@@ -288,21 +264,19 @@ public class ClientDashboardFrame extends JFrame {
         profileIcon.setBackground(mintTeal);
         profileIcon.setOpaque(true);
         profileIcon.setHorizontalAlignment(SwingConstants.CENTER);
-        profileIcon.setBounds(rightPanelWidth - (int) (rightPanelWidth * 0.05) - 50,
-                (int) (topBarHeight * 0.35), 50, 50);
+        profileIcon.setBounds(1463, 115, 50, 50);
         profileIcon.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
 
         // Separator Line
         separator = new JPanel();
         separator.setBackground(lightGrayBorder);
-        separator.setBounds(0, topBarHeight, rightPanelWidth, 1);
+        separator.setBounds(0, 275, 1595, 1);
 
         // --- Scrollable Services Grid Area ---
         mainContentPanel = new JPanel();
         mainContentPanel.setLayout(new GridLayout(0, 3, 40, 40));
         mainContentPanel.setBackground(Color.WHITE);
-        mainContentPanel.setBorder(
-                new EmptyBorder(40, (int) (rightPanelWidth * 0.04), 40, (int) (rightPanelWidth * 0.04)));
+        mainContentPanel.setBorder(new EmptyBorder(40, 63, 40, 63));
 
         // Add Service Cards from DataManager
         DataManager dataManager = DataManager.getInstance();
@@ -312,7 +286,7 @@ public class ClientDashboardFrame extends JFrame {
 
         // Scroll Pane for the main content
         scrollPane = new JScrollPane(mainContentPanel);
-        scrollPane.setBounds(0, topBarHeight + 1, rightPanelWidth, getHeight() - topBarHeight - 1);
+        scrollPane.setBounds(0, 276, 1595, 724);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -322,7 +296,7 @@ public class ClientDashboardFrame extends JFrame {
         noResultsLabel = new JLabel("No services found", SwingConstants.CENTER);
         noResultsLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         noResultsLabel.setForeground(Color.GRAY);
-        noResultsLabel.setBounds(0, topBarHeight + 1, rightPanelWidth, getHeight() - topBarHeight - 1);
+        noResultsLabel.setBounds(0, 276, 1595, 724);
         noResultsLabel.setVisible(false);
 
         // Search logic
@@ -398,7 +372,7 @@ public class ClientDashboardFrame extends JFrame {
         rightJPanel.repaint();
     }
 
-    private void showAppointmentsView(int width, int height) {
+    private void showAppointmentsView() {
         currentView = ViewState.APPOINTMENTS;
 
         // Clear right panel
@@ -406,7 +380,7 @@ public class ClientDashboardFrame extends JFrame {
         rightJPanel.setLayout(new BorderLayout());
 
         // Create and add appointments panel
-        AppointmentsPanel appointmentsPanel = new AppointmentsPanel(width, height, currentClient);
+        AppointmentsPanel appointmentsPanel = new AppointmentsPanel(1595, 1000, currentClient);
         rightJPanel.add(appointmentsPanel, BorderLayout.CENTER);
 
         // Update button states

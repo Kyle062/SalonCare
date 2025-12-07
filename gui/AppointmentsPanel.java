@@ -46,9 +46,9 @@ public class AppointmentsPanel extends JPanel {
     private JTextField nameField, contactField, emailField;
     private JComboBox<String> serviceCombo;
     private JComboBox<String> hourCombo, minuteCombo, ampmCombo;
-    private JFormattedTextField dateField;
     private JButton addAppointmentBtn, editBtn, cancelBtn;
     private JLabel statusLabel;
+    private JSpinner dateSpinner; // Changed from JDateChooser to JSpinner
 
     // Arrow panel for connecting appointments
     private JPanel arrowsPanel;
@@ -77,7 +77,6 @@ public class AppointmentsPanel extends JPanel {
     }
 
     private void createTopBar() {
-        // Centered search field
         JPanel searchWrapper = new RoundedPanel(30, WHITE);
         searchWrapper.setBounds(250, 30, 520, 52);
         searchWrapper.setLayout(new BorderLayout(10, 0));
@@ -102,7 +101,6 @@ public class AppointmentsPanel extends JPanel {
         searchWrapper.add(searchIcon, BorderLayout.WEST);
         add(searchWrapper);
 
-        // Top-right action buttons
         editBtn = createRoundedBlueButton("Edit Appointment");
         editBtn.setBounds(800, 35, 180, 40);
         editBtn.addActionListener(e -> editSelectedAppointment());
@@ -115,7 +113,6 @@ public class AppointmentsPanel extends JPanel {
         cancelBtn.setEnabled(false);
         add(cancelBtn);
 
-        // Status label for messages
         statusLabel = new JLabel("Ready");
         statusLabel.setBounds(250, 85, 500, 25);
         statusLabel.setFont(BODY);
@@ -125,7 +122,6 @@ public class AppointmentsPanel extends JPanel {
     }
 
     private void createLeftFormPanel() {
-        // Left form panel container
         JPanel leftPanel = new JPanel();
         leftPanel.setBounds(40, 120, 450, 580);
         leftPanel.setBackground(LEFT_CARD_BG);
@@ -133,7 +129,6 @@ public class AppointmentsPanel extends JPanel {
         leftPanel.setLayout(null);
         add(leftPanel);
 
-        // Title with plus icon
         JLabel plus = new JLabel("➕");
         plus.setBounds(20, 15, 40, 40);
         plus.setFont(new Font("Segoe UI", Font.PLAIN, 34));
@@ -144,93 +139,84 @@ public class AppointmentsPanel extends JPanel {
         title.setFont(new Font("Segoe UI", Font.BOLD, 24));
         leftPanel.add(title);
 
-        // Form fields
-        int y = 80;
-        int labelWidth = 150;
-        int fieldWidth = 200;
-        int fieldHeight = 32;
-
-        // Fullname
+        // Form fields with direct parameter values
         JLabel nameLabel = new JLabel("Full Name:");
-        nameLabel.setBounds(20, y, labelWidth, 24);
+        nameLabel.setBounds(20, 80, 150, 24);
         nameLabel.setFont(BODY_BOLD);
         leftPanel.add(nameLabel);
 
         nameField = new JTextField();
-        nameField.setBounds(180, y, fieldWidth, fieldHeight);
+        nameField.setBounds(180, 80, 200, 32);
         nameField.setFont(BODY);
         nameField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
         nameField.setEditable(false);
         leftPanel.add(nameField);
-        y += 45;
 
-        // Contact
         JLabel contactLabel = new JLabel("Phone Number:");
-        contactLabel.setBounds(20, y, labelWidth, 24);
+        contactLabel.setBounds(20, 125, 150, 24);
         contactLabel.setFont(BODY_BOLD);
         leftPanel.add(contactLabel);
 
         contactField = new JTextField();
-        contactField.setBounds(180, y, fieldWidth, fieldHeight);
+        contactField.setBounds(180, 125, 200, 32);
         contactField.setFont(BODY);
         contactField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
         contactField.setEditable(false);
         leftPanel.add(contactField);
-        y += 45;
 
-        // Email
         JLabel emailLabel = new JLabel("Email:");
-        emailLabel.setBounds(20, y, labelWidth, 24);
+        emailLabel.setBounds(20, 170, 150, 24);
         emailLabel.setFont(BODY_BOLD);
         leftPanel.add(emailLabel);
 
         emailField = new JTextField();
-        emailField.setBounds(180, y, fieldWidth, fieldHeight);
+        emailField.setBounds(180, 170, 200, 32);
         emailField.setFont(BODY);
         emailField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
         emailField.setEditable(false);
         leftPanel.add(emailField);
-        y += 45;
 
-        // Service Dropdown
         JLabel serviceLabel = new JLabel("Service:*");
-        serviceLabel.setBounds(20, y, labelWidth, 24);
+        serviceLabel.setBounds(20, 215, 150, 24);
         serviceLabel.setFont(BODY_BOLD);
         leftPanel.add(serviceLabel);
 
         serviceCombo = new JComboBox<>();
-        // Get services from DataManager
         List<ServiceItem> services = dataManager.getServicesList();
         for (ServiceItem service : services) {
             serviceCombo.addItem(service.getName());
         }
-        serviceCombo.setBounds(180, y, fieldWidth, fieldHeight);
+        serviceCombo.setBounds(180, 215, 200, 32);
         serviceCombo.setFont(BODY);
         leftPanel.add(serviceCombo);
-        y += 45;
 
-        // Date Field (formatted)
         JLabel dateLabel = new JLabel("Date (MM/DD/YYYY):*");
-        dateLabel.setBounds(20, y, labelWidth, 24);
+        dateLabel.setBounds(20, 260, 150, 24);
         dateLabel.setFont(BODY_BOLD);
         leftPanel.add(dateLabel);
 
-        dateField = new JFormattedTextField(new java.text.SimpleDateFormat("MM/dd/yyyy"));
-        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
-        dateField.setBounds(180, y, fieldWidth, fieldHeight);
-        dateField.setFont(BODY);
-        dateField.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(6, 10, 6, 10)));
-        leftPanel.add(dateField);
-        y += 45;
+        // Create JSpinner for date selection - NO EXTERNAL LIBRARY NEEDED
+        dateSpinner = new JSpinner(new SpinnerDateModel());
+        dateSpinner.setBounds(180, 260, 200, 32);
+        dateSpinner.setFont(BODY);
 
-        // Time Selection
+        // Set date format to MM/dd/yyyy
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "MM/dd/yyyy");
+        dateSpinner.setEditor(dateEditor);
+        dateSpinner.setValue(new java.util.Date()); // Set to current date
+
+        // Make the spinner editable (user can type or click arrows)
+        ((JSpinner.DefaultEditor) dateSpinner.getEditor()).getTextField().setEditable(true);
+
+        leftPanel.add(dateSpinner);
+
         JLabel timeLabel = new JLabel("Time:*");
-        timeLabel.setBounds(20, y, labelWidth, 24);
+        timeLabel.setBounds(20, 305, 150, 24);
         timeLabel.setFont(BODY_BOLD);
         leftPanel.add(timeLabel);
 
         JPanel timePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        timePanel.setBounds(180, y, fieldWidth, fieldHeight);
+        timePanel.setBounds(180, 305, 200, 32);
         timePanel.setOpaque(false);
 
         hourCombo = new JComboBox<>();
@@ -258,15 +244,12 @@ public class AppointmentsPanel extends JPanel {
         timePanel.add(ampmCombo);
 
         leftPanel.add(timePanel);
-        y += 60;
 
-        // Add Appointment button
         addAppointmentBtn = createRoundedBlueButton("Schedule Appointment");
-        addAppointmentBtn.setBounds(120, y, 220, 40);
+        addAppointmentBtn.setBounds(120, 365, 220, 40);
         addAppointmentBtn.addActionListener(e -> requestAppointment());
         leftPanel.add(addAppointmentBtn);
 
-        // Pre-fill client info if available
         if (currentClient != null) {
             nameField.setText(currentClient.getName());
             contactField.setText(currentClient.getPhone());
@@ -275,14 +258,12 @@ public class AppointmentsPanel extends JPanel {
     }
 
     private void createRightPanel() {
-        // Scheduled Appointment title
         JLabel titleLabel = new JLabel("Scheduled Appointments");
         titleLabel.setBounds(520, 120, 300, 30);
         titleLabel.setFont(H2);
         titleLabel.setForeground(TEXT_PRIMARY);
         add(titleLabel);
 
-        // Main appointments container with proper scroll pane
         JPanel rightContainer = new JPanel();
         rightContainer.setBounds(520, 160, 760, 300);
         rightContainer.setLayout(new BorderLayout());
@@ -290,13 +271,11 @@ public class AppointmentsPanel extends JPanel {
         rightContainer.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
         add(rightContainer);
 
-        // Appointments list panel
         appointmentsListPanel = new JPanel();
         appointmentsListPanel.setLayout(new BoxLayout(appointmentsListPanel, BoxLayout.Y_AXIS));
         appointmentsListPanel.setOpaque(false);
         appointmentsListPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 
-        // Scroll pane with proper configuration
         JScrollPane scrollPane = new JScrollPane(appointmentsListPanel);
         scrollPane.setBorder(null);
         scrollPane.setOpaque(false);
@@ -308,7 +287,6 @@ public class AppointmentsPanel extends JPanel {
 
         rightContainer.add(scrollPane, BorderLayout.CENTER);
 
-        // Arrows panel (positioned absolutely over the scroll pane)
         arrowsPanel = new JPanel(null);
         arrowsPanel.setBounds(520, 160, 760, 300);
         arrowsPanel.setOpaque(false);
@@ -400,7 +378,6 @@ public class AppointmentsPanel extends JPanel {
         arrowsPanel.removeAll();
         timelinePanel.removeAll();
 
-        // Sort appointments by date/time
         displayedList.sort((a, b) -> a.getDateTime().compareTo(b.getDateTime()));
 
         if (displayedList.isEmpty()) {
@@ -417,7 +394,6 @@ public class AppointmentsPanel extends JPanel {
                 appointmentsListPanel.add(card);
                 appointmentsListPanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-                // Add arrow after each card except the last one
                 if (i < displayedList.size() - 1) {
                     int arrowY = 10 + i * 80;
                     JLabel arrow = new JLabel("↓");
@@ -430,10 +406,8 @@ public class AppointmentsPanel extends JPanel {
             }
         }
 
-        // Build timeline
         buildTimeline();
 
-        // Update UI
         appointmentsListPanel.revalidate();
         appointmentsListPanel.repaint();
         arrowsPanel.revalidate();
@@ -441,7 +415,6 @@ public class AppointmentsPanel extends JPanel {
         timelinePanel.revalidate();
         timelinePanel.repaint();
 
-        // Update button states
         editBtn.setEnabled(selectedAppointment != null);
         cancelBtn.setEnabled(selectedAppointment != null);
     }
@@ -456,13 +429,11 @@ public class AppointmentsPanel extends JPanel {
         card.setMaximumSize(new Dimension(730, 70));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Time section
         JLabel timeLabel = new JLabel(appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a")));
         timeLabel.setFont(BODY_BOLD);
         timeLabel.setPreferredSize(new Dimension(100, 30));
         card.add(timeLabel, BorderLayout.WEST);
 
-        // Center section with name and date
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
 
@@ -477,7 +448,6 @@ public class AppointmentsPanel extends JPanel {
         centerPanel.add(dateLabel, BorderLayout.SOUTH);
         card.add(centerPanel, BorderLayout.CENTER);
 
-        // Right section with service and status
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.setOpaque(false);
 
@@ -494,7 +464,6 @@ public class AppointmentsPanel extends JPanel {
         rightPanel.add(statusLabel, BorderLayout.SOUTH);
         card.add(rightPanel, BorderLayout.EAST);
 
-        // Click handler
         card.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 selectedAppointment = appt;
@@ -560,7 +529,9 @@ public class AppointmentsPanel extends JPanel {
         emailField.setText(appt.getClient().getEmail());
         serviceCombo.setSelectedItem(appt.getService().getName());
 
-        dateField.setValue(java.sql.Date.valueOf(appt.getDateTime().toLocalDate()));
+        // Set date spinner value - convert LocalDateTime to java.util.Date
+        java.util.Date date = java.sql.Timestamp.valueOf(appt.getDateTime());
+        dateSpinner.setValue(date);
 
         LocalTime time = appt.getDateTime().toLocalTime();
         int hour = time.getHour();
@@ -583,7 +554,7 @@ public class AppointmentsPanel extends JPanel {
 
     private void clearForm() {
         serviceCombo.setSelectedIndex(0);
-        dateField.setValue(java.sql.Date.valueOf(LocalDate.now()));
+        dateSpinner.setValue(new java.util.Date()); // Reset to current date
         hourCombo.setSelectedItem(String.format("%02d",
                 LocalTime.now().getHour() % 12 == 0 ? 12 : LocalTime.now().getHour() % 12));
         minuteCombo.setSelectedItem(String.format("%02d", (LocalTime.now().getMinute() / 5) * 5));
@@ -606,17 +577,17 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Parse date and time
-            java.util.Date dateValue = (java.util.Date) dateField.getValue();
-            if (dateValue == null) {
+            // Get date from JSpinner - NO EXTERNAL LIBRARY NEEDED
+            java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+            if (selectedDate == null) {
                 JOptionPane.showMessageDialog(this,
-                        "Please select a valid date",
+                        "Please select a date",
                         "Missing Information",
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            LocalDate date = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
 
             String hourStr = (String) hourCombo.getSelectedItem();
             String minuteStr = (String) minuteCombo.getSelectedItem();
@@ -632,7 +603,6 @@ public class AppointmentsPanel extends JPanel {
             LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
             LocalDateTime dt = LocalDateTime.of(date, time);
 
-            // Validate date/time
             if (dt.isBefore(LocalDateTime.now())) {
                 JOptionPane.showMessageDialog(this,
                         "Cannot schedule appointment in the past",
@@ -649,7 +619,6 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Check for time slot availability
             if (isTimeSlotBooked(dt)) {
                 JOptionPane.showMessageDialog(this,
                         "This time slot is already booked. Please choose another time.",
@@ -658,16 +627,14 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Get or create service
             ServiceItem service = dataManager.getServiceByName(serviceName);
             if (service == null) {
                 service = new ServiceItem(serviceName, 0.0);
                 dataManager.services.add(service);
             }
 
-            // Create and add appointment
             Appointment appt = new Appointment(UUID.randomUUID().toString(), currentClient, service, dt);
-            appt.setConfirmed(true); // Directly confirmed (no pending requests)
+            appt.setConfirmed(true);
             dataManager.appointments.addSorted(appt);
 
             loadClientAppointments();
@@ -706,16 +673,14 @@ public class AppointmentsPanel extends JPanel {
             return;
         }
 
-        // Ask for cancellation reason
         String reason = JOptionPane.showInputDialog(this,
                 "Please provide a reason for cancellation (optional):",
                 "Cancellation Reason",
                 JOptionPane.QUESTION_MESSAGE);
 
         if (reason == null)
-            return; // User cancelled
+            return;
 
-        // Create cancellation request
         CancellationRequest cancellation = new CancellationRequest(
                 UUID.randomUUID().toString(),
                 selectedAppointment.getId(),
@@ -756,9 +721,8 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Parse date and time
-            java.util.Date dateValue = (java.util.Date) dateField.getValue();
-            if (dateValue == null) {
+            java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+            if (selectedDate == null) {
                 JOptionPane.showMessageDialog(this,
                         "Please select a valid date",
                         "Missing Information",
@@ -766,7 +730,7 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            LocalDate date = dateValue.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            LocalDate date = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
 
             String hourStr = (String) hourCombo.getSelectedItem();
             String minuteStr = (String) minuteCombo.getSelectedItem();
@@ -782,7 +746,6 @@ public class AppointmentsPanel extends JPanel {
             LocalTime time = LocalTime.of(hour, Integer.parseInt(minuteStr));
             LocalDateTime newDateTime = LocalDateTime.of(date, time);
 
-            // Validate date/time
             if (newDateTime.isBefore(LocalDateTime.now())) {
                 JOptionPane.showMessageDialog(this,
                         "Cannot schedule appointment in the past",
@@ -799,7 +762,6 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Check for time slot availability (excluding the appointment being edited)
             for (Appointment existing : dataManager.getAppointmentsList()) {
                 if (!existing.getId().equals(selectedAppointment.getId()) &&
                         existing.getDateTime().equals(newDateTime)) {
@@ -811,14 +773,12 @@ public class AppointmentsPanel extends JPanel {
                 }
             }
 
-            // Get service
             ServiceItem service = dataManager.getServiceByName(serviceName);
             if (service == null) {
                 service = new ServiceItem(serviceName, 0.0);
                 dataManager.services.add(service);
             }
 
-            // Update appointment
             selectedAppointment.setService(service);
             selectedAppointment.setDateTime(newDateTime);
 

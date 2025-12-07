@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\kylea\\Downloads\\jcalendar-0.8.1\\jcalendar-0.8.1.jar"
+    ]
+}
