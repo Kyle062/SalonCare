@@ -32,7 +32,7 @@ public class SalonStaffDashboard extends JFrame {
     private JButton updateExistingButton;
     private JTextField searchClientField;
     private JPanel scheduledAppointmentsPanel;
-    private JPanel cancellationRequestsContainer; // Changed from pendingRequestsContainer
+    private JPanel cancellationRequestsContainer; 
     private Appointment selectedAppointmentForEdit = null;
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
