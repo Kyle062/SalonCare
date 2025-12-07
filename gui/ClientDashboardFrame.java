@@ -217,13 +217,13 @@ public class ClientDashboardFrame extends JFrame {
         servicesTitle = new JLabel("Our Services");
         servicesTitle.setFont(new Font("Segoe UI", Font.BOLD, 36));
         servicesTitle.setForeground(darkGrayText);
-        servicesTitle.setBounds(63, 115, 478, 160);
+        servicesTitle.setBounds(63, 80, 478, 100);
 
         // Search Bar
         searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         searchField.setForeground(Color.GRAY.darker());
-        searchField.setBounds(1235, 115, 398, 50);
+        searchField.setBounds(1000, 100, 398, 50);
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(lightGrayBorder, 1, true),
                 BorderFactory.createEmptyBorder(5, 15, 5, 15)));
@@ -239,7 +239,7 @@ public class ClientDashboardFrame extends JFrame {
         searchBtn.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(lightGrayBorder, 1, true),
                 BorderFactory.createEmptyBorder(6, 14, 6, 14)));
-        searchBtn.setBounds(1348, 115, 100, 50);
+        searchBtn.setBounds(1400, 100, 100, 50);
         searchBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         Color normalBg = mintTeal;
@@ -264,7 +264,7 @@ public class ClientDashboardFrame extends JFrame {
         profileIcon.setBackground(mintTeal);
         profileIcon.setOpaque(true);
         profileIcon.setHorizontalAlignment(SwingConstants.CENTER);
-        profileIcon.setBounds(1463, 115, 50, 50);
+        profileIcon.setBounds(1500, 100, 50, 50);
         profileIcon.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2));
 
         // Separator Line
