@@ -32,7 +32,7 @@ public class SalonStaffDashboard extends JFrame {
     private JButton updateExistingButton;
     private JTextField searchClientField;
     private JPanel scheduledAppointmentsPanel;
-    private JPanel cancellationRequestsContainer; 
+    private JPanel cancellationRequestsContainer;
     private Appointment selectedAppointmentForEdit = null;
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy hh:mm a");
@@ -492,14 +492,25 @@ public class SalonStaffDashboard extends JFrame {
 
     private JPanel createAppointmentCard(Appointment appointment) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
-        card.setBorder(new LineBorder(new Color(192, 192, 192), 1, true));
-        card.setBackground(Color.WHITE);
+
+        // Change border color if cancellation is pending
+        if (appointment.hasPendingCancellation()) {
+            card.setBorder(new LineBorder(new Color(255, 165, 0), 2, true)); // Orange border for pending cancellation
+            card.setBackground(new Color(255, 250, 240)); // Light orange background
+        } else {
+            card.setBorder(new LineBorder(new Color(192, 192, 192), 1, true));
+            card.setBackground(Color.WHITE);
+        }
+
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
         JPanel detailsPanel = new JPanel(new GridLayout(4, 1));
-        detailsPanel.setBackground(Color.WHITE);
+        detailsPanel.setBackground(card.getBackground());
         detailsPanel.setBorder(new EmptyBorder(5, 10, 5, 5));
-        detailsPanel.add(new JLabel("Name: " + appointment.getClientName()));
+
+        // Add cancellation status to display
+        String statusText = appointment.hasPendingCancellation() ? " ⏳ PENDING CANCELLATION" : "";
+        detailsPanel.add(new JLabel("Name: " + appointment.getClientName() + statusText));
         detailsPanel.add(new JLabel("Service: " + appointment.getServiceName()));
         detailsPanel.add(new JLabel("Date: " + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[0] + " "
                 + appointment.getDateTime().format(DATE_TIME_FORMATTER).split(" ")[1]));
@@ -509,12 +520,19 @@ public class SalonStaffDashboard extends JFrame {
         card.add(detailsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBackground(card.getBackground());
+
         JButton editButton = new JButton("EDIT");
         editButton.setBackground(new Color(60, 179, 113));
         editButton.setForeground(Color.WHITE);
         editButton.setFocusPainted(false);
         editButton.addActionListener(e -> populateFormForEdit(appointment));
+
+        // Disable edit if cancellation is pending
+        if (appointment.hasPendingCancellation()) {
+            editButton.setEnabled(false);
+            editButton.setBackground(new Color(200, 200, 200));
+        }
 
         JButton cancelButton = new JButton("CANCEL");
         cancelButton.setBackground(new Color(220, 20, 60));
@@ -587,6 +605,12 @@ public class SalonStaffDashboard extends JFrame {
                 JOptionPane.YES_NO_OPTION);
 
         if (response == JOptionPane.YES_OPTION) {
+            // Update appointment status before removing
+            Appointment appointment = dataManager.appointments.findById(request.getAppointmentId());
+            if (appointment != null) {
+                appointment.setCancellationStatus("APPROVED");
+            }
+
             dataManager.approveCancellation(request.getRequestId());
             JOptionPane.showMessageDialog(this,
                     "Cancellation approved. Appointment removed from schedule.",
@@ -605,9 +629,16 @@ public class SalonStaffDashboard extends JFrame {
                 JOptionPane.YES_NO_OPTION);
 
         if (response == JOptionPane.YES_OPTION) {
+            // Update appointment status to remove pending flag
+            Appointment appointment = dataManager.appointments.findById(request.getAppointmentId());
+            if (appointment != null) {
+                appointment.setCancellationStatus("REJECTED");
+            }
+
             dataManager.removeCancellationRequest(request.getRequestId());
             JOptionPane.showMessageDialog(this,
-                    "Cancellation request rejected. Appointment remains scheduled.",
+                    "Cancellation request rejected. Appointment remains scheduled.\n" +
+                            "Client can now request cancellation again if needed.",
                     "Cancellation Rejected",
                     JOptionPane.INFORMATION_MESSAGE);
             refreshCancellationRequests();
@@ -615,6 +646,16 @@ public class SalonStaffDashboard extends JFrame {
     }
 
     private void populateFormForEdit(Appointment appointment) {
+        // Prevent editing if cancellation is pending
+        if (appointment.hasPendingCancellation()) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot edit appointment while cancellation request is pending.\n" +
+                            "Please approve or reject the cancellation request first.",
+                    "Editing Blocked",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         selectedAppointmentForEdit = appointment;
         clientNameField.setText(appointment.getClientName());
         contactNumberField.setText(appointment.getClientContact());

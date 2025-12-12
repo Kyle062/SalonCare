@@ -419,6 +419,8 @@ public class AppointmentsPanel extends JPanel {
         cancelBtn.setEnabled(selectedAppointment != null);
     }
 
+    // In the AppointmentsPanel class, update the createAppointmentCard method:
+
     private JPanel createAppointmentCard(Appointment appt) {
         JPanel card = new JPanel(new BorderLayout(10, 0));
         card.setBackground(WHITE);
@@ -427,7 +429,14 @@ public class AppointmentsPanel extends JPanel {
                         appt.equals(selectedAppointment) ? 2 : 1),
                 new EmptyBorder(10, 15, 10, 15)));
         card.setMaximumSize(new Dimension(730, 70));
-        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Disable card if cancellation is pending
+        if (appt.hasPendingCancellation()) {
+            card.setBackground(new Color(255, 245, 245)); // Light red background
+            card.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        } else {
+            card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
 
         JLabel timeLabel = new JLabel(appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a")));
         timeLabel.setFont(BODY_BOLD);
@@ -455,9 +464,22 @@ public class AppointmentsPanel extends JPanel {
         serviceLabel.setFont(BODY_BOLD);
         serviceLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
-        JLabel statusLabel = new JLabel("✓ Confirmed");
-        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statusLabel.setForeground(new Color(40, 167, 69));
+        // Show cancellation status if pending
+        JLabel statusLabel;
+        if (appt.hasPendingCancellation()) {
+            statusLabel = new JLabel("⏳ Cancellation Pending");
+            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            statusLabel.setForeground(new Color(255, 140, 0)); // Orange color for pending
+        } else if (appt.isConfirmed()) {
+            statusLabel = new JLabel("✓ Confirmed");
+            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            statusLabel.setForeground(new Color(40, 167, 69)); // Green for confirmed
+        } else {
+            statusLabel = new JLabel("? Pending");
+            statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            statusLabel.setForeground(new Color(108, 117, 125)); // Gray for pending
+        }
+
         statusLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
         rightPanel.add(serviceLabel, BorderLayout.CENTER);
@@ -466,9 +488,12 @@ public class AppointmentsPanel extends JPanel {
 
         card.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                selectedAppointment = appt;
-                populateFormWithAppointment(appt);
-                refreshAppointments();
+                // Only allow selection if cancellation is not pending
+                if (!appt.hasPendingCancellation()) {
+                    selectedAppointment = appt;
+                    populateFormWithAppointment(appt);
+                    refreshAppointments();
+                }
             }
         });
 
@@ -529,7 +554,7 @@ public class AppointmentsPanel extends JPanel {
         emailField.setText(appt.getClient().getEmail());
         serviceCombo.setSelectedItem(appt.getService().getName());
 
-        // Set date spinner value - convert LocalDateTime to java.util.Date
+        // Set date spinner value
         java.util.Date date = java.sql.Timestamp.valueOf(appt.getDateTime());
         dateSpinner.setValue(date);
 
@@ -544,12 +569,23 @@ public class AppointmentsPanel extends JPanel {
         if (hour == 0)
             hour = 12;
 
-        hourCombo.setSelectedItem(String.format("%02d", hour));
-        minuteCombo.setSelectedItem(String.format("%02d", (time.getMinute() / 5) * 5));
-        ampmCombo.setSelectedItem(ampm);
+        hourCombo.setSelectedItem(String.format("%02d", hour)); // Fixed: hourCombo not hourComboBox
+        minuteCombo.setSelectedItem(String.format("%02d", (time.getMinute() / 5) * 5)); // Fixed: minuteCombo not
+                                                                                        // minuteComboBox
+        ampmCombo.setSelectedItem(ampm); // Fixed: ampmCombo not ampmComboBox
 
-        statusLabel.setText("Selected: " + appt.getService().getName() + " at " +
-                appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a, MMM d")));
+        // Disable edit/cancel buttons if cancellation is pending
+        if (appt.hasPendingCancellation()) {
+            editBtn.setEnabled(false);
+            cancelBtn.setEnabled(false);
+            statusLabel.setText("Cancellation pending for: " + appt.getService().getName() + " at " +
+                    appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a, MMM d")));
+        } else {
+            editBtn.setEnabled(true);
+            cancelBtn.setEnabled(true);
+            statusLabel.setText("Selected: " + appt.getService().getName() + " at " +
+                    appt.getDateTime().format(DateTimeFormatter.ofPattern("h:mm a, MMM d")));
+        }
     }
 
     private void clearForm() {
@@ -577,7 +613,7 @@ public class AppointmentsPanel extends JPanel {
                 return;
             }
 
-            // Get date from JSpinner - NO EXTERNAL LIBRARY NEEDED
+            // Get date from JSpinner
             java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
             if (selectedDate == null) {
                 JOptionPane.showMessageDialog(this,
@@ -589,9 +625,9 @@ public class AppointmentsPanel extends JPanel {
 
             LocalDate date = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
 
-            String hourStr = (String) hourCombo.getSelectedItem();
-            String minuteStr = (String) minuteCombo.getSelectedItem();
-            String ampm = (String) ampmCombo.getSelectedItem();
+            String hourStr = (String) hourCombo.getSelectedItem(); // Fixed: hourCombo
+            String minuteStr = (String) minuteCombo.getSelectedItem(); // Fixed: minuteCombo
+            String ampm = (String) ampmCombo.getSelectedItem(); // Fixed: ampmCombo
 
             int hour = Integer.parseInt(hourStr);
             if (ampm.equals("PM") && hour != 12) {
@@ -655,15 +691,6 @@ public class AppointmentsPanel extends JPanel {
         }
     }
 
-    private boolean isTimeSlotBooked(LocalDateTime dt) {
-        for (Appointment existing : dataManager.getAppointmentsList()) {
-            if (existing.getDateTime().equals(dt)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void deleteSelectedAppointment() {
         if (selectedAppointment == null) {
             JOptionPane.showMessageDialog(this,
@@ -673,12 +700,22 @@ public class AppointmentsPanel extends JPanel {
             return;
         }
 
+        // Check if cancellation is already pending
+        if (selectedAppointment.hasPendingCancellation()) {
+            JOptionPane.showMessageDialog(this,
+                    "A cancellation request is already pending for this appointment.\n" +
+                            "Please wait for staff approval.",
+                    "Cancellation Already Requested",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         String reason = JOptionPane.showInputDialog(this,
                 "Please provide a reason for cancellation (optional):",
                 "Cancellation Reason",
                 JOptionPane.QUESTION_MESSAGE);
 
-        if (reason == null)
+        if (reason == null) // User clicked cancel
             return;
 
         CancellationRequest cancellation = new CancellationRequest(
@@ -689,6 +726,9 @@ public class AppointmentsPanel extends JPanel {
                 selectedAppointment.getDateTime(),
                 reason.isEmpty() ? "No reason provided" : reason);
 
+        // Mark appointment as having pending cancellation
+        selectedAppointment.setCancellationStatus("PENDING");
+
         dataManager.addCancellationRequest(cancellation);
 
         selectedAppointment = null;
@@ -697,7 +737,8 @@ public class AppointmentsPanel extends JPanel {
         clearForm();
 
         JOptionPane.showMessageDialog(this,
-                "Cancellation request submitted. Please wait for staff confirmation.",
+                "Cancellation request submitted. Please wait for staff confirmation.\n" +
+                        "You can no longer cancel this appointment while the request is pending.",
                 "Cancellation Requested",
                 JOptionPane.INFORMATION_MESSAGE);
     }
@@ -707,6 +748,16 @@ public class AppointmentsPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Please select an appointment to edit first",
                     "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Prevent editing if cancellation is pending
+        if (selectedAppointment.hasPendingCancellation()) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot edit appointment while cancellation request is pending.\n" +
+                            "Please wait for staff to approve or reject the cancellation first.",
+                    "Editing Blocked",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -732,9 +783,9 @@ public class AppointmentsPanel extends JPanel {
 
             LocalDate date = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
 
-            String hourStr = (String) hourCombo.getSelectedItem();
-            String minuteStr = (String) minuteCombo.getSelectedItem();
-            String ampm = (String) ampmCombo.getSelectedItem();
+            String hourStr = (String) hourCombo.getSelectedItem(); // Fixed: hourCombo
+            String minuteStr = (String) minuteCombo.getSelectedItem(); // Fixed: minuteCombo
+            String ampm = (String) ampmCombo.getSelectedItem(); // Fixed: ampmCombo
 
             int hour = Integer.parseInt(hourStr);
             if (ampm.equals("PM") && hour != 12) {
@@ -840,5 +891,16 @@ public class AppointmentsPanel extends JPanel {
             g2.dispose();
             super.paintComponent(g);
         }
+    }
+
+    private boolean isTimeSlotBooked(LocalDateTime dt) {
+        // Check if the selected time slot is already booked
+        for (Appointment existing : dataManager.getAppointmentsList()) {
+            // If there's an appointment at the exact same time, it's booked
+            if (existing.getDateTime().equals(dt)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
