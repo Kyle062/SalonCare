@@ -29,13 +29,13 @@ public class DataManager {
     private void seed() {
         // Seed clients
         clients.add(new Client("C001", "Maria Santos", "09171234567", "maria@example.com", "pass123"));
-        clients.add(new Client("C002", "John Cruz", "09187654321", "john@example.com", "pass123"));
-        clients.add(new Client("C003", "Anna Lee", "09191112222", "anna@example.com", "pass123"));
-        clients.add(new Client("C004", "Jielly Abao", "09123456789", "jiellyAbao@gmail.com", "password123"));
+                clients.add(new Client("C002", "John Cruz", "09187654321", "john@example.com", "pass123"));
+                clients.add(new Client("C003", "Anna Lee", "09191112222", "anna@example.com", "pass123"));
+                clients.add(new Client("C004", "Jielly Abao", "09123456789", "jiellyAbao@gmail.com", "password123"));
 
-        // Seed staff
-        clients.add(new Client("S001", "Admin Staff", "09100000001", "staff@salon.com", "staff123", true));
-        clients.add(new Client("S002", "Jane Smith", "09100000002", "staff2@salon.com", "staff123", true));
+                // Seed staff
+                clients.add(new Client("S001", "Admin Staff", "09100000001", "staff@salon.com", "staff123", true));
+                clients.add(new Client("S002", "Jane Smith", "09100000002", "staff2@salon.com", "staff123", true));
 
         // Seed services
         services.add(new ServiceItem("Signature Haircut", 800.00));

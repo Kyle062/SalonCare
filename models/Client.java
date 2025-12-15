@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class Client implements Serializable {
     private static final long serialVersionUID = 1L;
     private String id, name, phone, email, passWord;
-    private boolean isStaff; // NEW FIELD
+    private boolean isStaff;
 
     public Client(String id, String name, String phone, String email, String passWord) {
         this(id, name, phone, email, passWord, false);

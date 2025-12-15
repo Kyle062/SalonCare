@@ -396,12 +396,5 @@ public class ClientDashboardFrame extends JFrame {
         rightJPanel.repaint();
     }
 
-    public static void main(String[] args) {
-        // For testing only
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            DataManager dm = DataManager.getInstance();
-            Client testClient = dm.clients.get(0);
-            new ClientDashboardFrame(testClient);
-        });
-    }
+    
 }

@@ -27,11 +27,10 @@ public class AppointmentsPanel extends JPanel {
     private final Color ARROW_COLOR = new Color(100, 100, 100);
     private final Color DANGER_RED = new Color(220, 53, 69);
 
-    private final Font H1 = new Font("Segoe UI", Font.BOLD, 28);
     private final Font H2 = new Font("Segoe UI", Font.BOLD, 20);
     private final Font BODY = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font BODY_BOLD = new Font("Segoe UI", Font.BOLD, 14);
-
+    
     // Data
     private DataManager dataManager;
     private Client currentClient;
